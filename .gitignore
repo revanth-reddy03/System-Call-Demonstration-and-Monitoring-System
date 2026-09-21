@@ -1,0 +1,23 @@
+# Binaries
+sys_call_demo
+child_worker
+*.exe
+*.out
+
+# Object files and build directory
+build/
+*.o
+
+# Temporary demonstration files
+sys_demo_testfile.txt
+non_existent_file_99999.xyz
+
+# Logs and profiling traces
+traces/*.log
+*.log
+
+# Editor and IDE metadata
+.vscode/
+.idea/
+*.swp
+*~
