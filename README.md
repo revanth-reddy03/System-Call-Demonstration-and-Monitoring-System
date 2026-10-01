@@ -105,6 +105,23 @@ This generates two executable binaries:
 
 ## Usage Guide
 
+### Quick Start: All-in-One Master Runner
+Run the entire pipeline (Clean $\to$ Build $\to$ Test $\to$ Demo $\to$ Trace $\to$ Report) with a single command:
+```bash
+make auto
+# or
+./demo.sh --auto
+```
+
+Or open the unified interactive launcher:
+```bash
+make demo
+# or
+./demo.sh
+```
+
+---
+
 ### 1. Interactive Menu
 Launch the interactive CLI menu:
 ```bash

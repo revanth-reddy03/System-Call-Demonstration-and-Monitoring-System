@@ -18,7 +18,7 @@ SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/file_ops.c $(SRC_DIR)/process_ops.c $(SRC_DI
 OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/file_ops.o $(BUILD_DIR)/process_ops.o $(BUILD_DIR)/error_demo.o
 CHILD_SRC = $(SRC_DIR)/child_worker.c
 
-.PHONY: all clean run run-batch trace analyze test help
+.PHONY: all clean run run-batch trace analyze test demo auto help
 
 all: $(BUILD_DIR) $(MAIN_TARGET) $(CHILD_TARGET)
 
@@ -57,11 +57,21 @@ test: all
 	@chmod +x tests/test_runner.sh
 	./tests/test_runner.sh
 
+demo:
+	@chmod +x demo.sh
+	./demo.sh
+
+auto:
+	@chmod +x demo.sh
+	./demo.sh --auto
+
 clean:
 	rm -rf $(BUILD_DIR) $(MAIN_TARGET) $(CHILD_TARGET) sys_demo_testfile.txt non_existent_file_99999.xyz $(TRACES_DIR)/*.log trace_report.md
 
 help:
 	@echo "Available Makefile targets:"
+	@echo "  make auto       - Run COMPLETE pipeline automatically (Build -> Test -> Trace -> Report)"
+	@echo "  make demo       - Launch unified Master Menu"
 	@echo "  make            - Build both main demo and child worker binaries"
 	@echo "  make run        - Launch interactive CLI menu"
 	@echo "  make run-batch  - Run all demo modules non-interactively"

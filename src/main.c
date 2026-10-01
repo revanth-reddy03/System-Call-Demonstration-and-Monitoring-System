@@ -7,7 +7,7 @@
  * Authors: Akhil AD (2520030423)
  *          Revanth Reddy (2520030424)
  *          Advik (2520039623)
- * Faculty: Dr. K. Hema
+ * 
  * ============================================================================
  * File: main.c
  * Description: Main entry point providing an interactive menu and CLI batch
@@ -27,7 +27,6 @@ void print_banner(void) {
     printf(COLOR_CYAN "      Course:  Operating Systems and Systems Programming (25CS2104E)\n" COLOR_RESET);
     printf(COLOR_CYAN "      Term:    2026-27, Term-I | Section: 03 | Team: 18\n" COLOR_RESET);
     printf(COLOR_CYAN "      Authors: Akhil AD (2520030423), Revanth Reddy (2520030424), Advik (2520039623)\n" COLOR_RESET);
-    printf(COLOR_CYAN "      Faculty: Dr. K. Hema\n" COLOR_RESET);
     printf(COLOR_CYAN "================================================================================\n" COLOR_RESET);
     printf("\n");
 }
