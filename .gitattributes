@@ -1,0 +1,4 @@
+# Ensure shell scripts and python scripts always retain Unix LF line endings
+*.sh text eol=lf
+*.py text eol=lf
+Makefile text eol=lf

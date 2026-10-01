@@ -1,24 +1,10 @@
-/**
- * ============================================================================
- * Project: System Call Demonstration and Monitoring System
- * Course:  Operating Systems and Systems Programming (25CS2104E)
- * Term:    2026-27, Term-I
- * Section: 03 | Team: 18
- * Authors: Akhil AD (2520030423)
- *          Revanth Reddy (2520030424)
- *          Advik (2520039623)
- * Faculty: Dr. K. Hema
- * ============================================================================
- * File: common.h
- * Description: Common headers, ANSI color formatting, logging utilities,
- *              and shared macros used across all demonstration modules.
- * ============================================================================
- */
+
 
 #ifndef COMMON_H
 #define COMMON_H
 
 #define _GNU_SOURCE
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
