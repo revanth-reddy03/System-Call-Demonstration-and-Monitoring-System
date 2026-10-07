@@ -49,7 +49,7 @@ static void print_usage(const char *prog_name) {
     printf("Usage: %s [OPTION]\n\n", prog_name);
     printf("Options:\n");
     printf("  -b, --batch       Run all demonstration modules sequentially (non-interactive)\n");
-    printf("  -f, --file        Run file operations module only (open, write, read, close)\n");
+    printf("  -f, --file [DATA] Run file operations module only (writes DATA or prompts)\n");
     printf("  -p, --process     Run process management module only (fork, execvp, waitpid)\n");
     printf("  -e, --error       Run error handling module only (errno, perror, strerror)\n");
     printf("  -h, --help        Display this help message\n");
@@ -57,7 +57,7 @@ static void print_usage(const char *prog_name) {
 }
 
 static void run_all_modules(void) {
-    demonstrate_file_ops();
+    demonstrate_file_ops(NULL);
     demonstrate_process_ops();
     demonstrate_error_handling();
 
@@ -92,7 +92,7 @@ static void display_interactive_menu(void) {
                 run_all_modules();
                 break;
             case 2:
-                demonstrate_file_ops();
+                demonstrate_file_ops(NULL);
                 break;
             case 3:
                 demonstrate_process_ops();
@@ -128,7 +128,8 @@ int main(int argc, char *argv[]) {
             run_all_modules();
             return 0;
         } else if (strcmp(argv[1], "--file") == 0 || strcmp(argv[1], "-f") == 0) {
-            return demonstrate_file_ops();
+            const char *custom_data = (argc > 2) ? argv[2] : NULL;
+            return demonstrate_file_ops(custom_data);
         } else if (strcmp(argv[1], "--process") == 0 || strcmp(argv[1], "-p") == 0) {
             return demonstrate_process_ops();
         } else if (strcmp(argv[1], "--error") == 0 || strcmp(argv[1], "-e") == 0) {

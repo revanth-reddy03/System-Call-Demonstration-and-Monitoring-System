@@ -10,18 +10,47 @@
 
 #include "file_ops.h"
 
-int demonstrate_file_ops(void) {
+int demonstrate_file_ops(const char *custom_data) {
     print_section_header("MODULE 1: FILE OPERATIONS DEMONSTRATION");
 
     int fd;
     ssize_t bytes_written;
     ssize_t bytes_read;
-    char write_buffer[] = 
-        "=== System Call Demonstration and Monitoring System ===\n"
-        "Operating Systems and Systems Programming (25CS2104E)\n"
-        "Team 18: Akhil AD, Revanth Reddy, Advik\n"
-        "Status: Data successfully transferred from User Space to Kernel Space.\n";
-    
+    char write_buffer[DEMO_BUFFER_SIZE];
+    memset(write_buffer, 0, sizeof(write_buffer));
+
+    /* -------------------------------------------------------------
+     * Data Input Selection: Custom parameter, interactive prompt, or default
+     * ------------------------------------------------------------- */
+    if (custom_data != NULL && strlen(custom_data) > 0) {
+        snprintf(write_buffer, sizeof(write_buffer), "%s\n", custom_data);
+        LOG_INFO("Using provided custom input data for file write operation.");
+    } else if (isatty(fileno(stdin))) {
+        printf(COLOR_BOLD COLOR_YELLOW "\n[PROMPT] Enter custom data/text to write into '%s':\n> " COLOR_RESET, DEMO_FILE_PATH);
+        fflush(stdout);
+        char input_line[DEMO_BUFFER_SIZE - 64];
+        if (fgets(input_line, sizeof(input_line), stdin)) {
+            size_t len = strlen(input_line);
+            if (len > 0 && input_line[len - 1] == '\n') {
+                input_line[len - 1] = '\0';
+            }
+            if (strlen(input_line) > 0) {
+                snprintf(write_buffer, sizeof(write_buffer), "%s\n", input_line);
+                LOG_SUCCESS("User data captured: \"%s\"", input_line);
+            }
+        }
+    }
+
+    /* Fallback to default demonstration text if no input was provided */
+    if (strlen(write_buffer) == 0) {
+        snprintf(write_buffer, sizeof(write_buffer),
+            "=== System Call Demonstration and Monitoring System ===\n"
+            "Operating Systems and Systems Programming (25CS2104E)\n"
+            "Team 18: Akhil AD, Revanth Reddy, Advik\n"
+            "Status: Data successfully transferred from User Space to Kernel Space.\n");
+        LOG_INFO("Using default demonstration text.");
+    }
+
     char read_buffer[DEMO_BUFFER_SIZE];
     memset(read_buffer, 0, sizeof(read_buffer));
 

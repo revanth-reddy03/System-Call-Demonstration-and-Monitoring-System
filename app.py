@@ -215,7 +215,18 @@ def run_action(action):
     if action not in command_map:
         return jsonify({"success": False, "error": f"Invalid action '{action}'"}), 400
 
-    cmd = command_map[action]
+    custom_text = None
+    if request.is_json and request.json:
+        custom_text = request.json.get("custom_text")
+    elif request.form and "custom_text" in request.form:
+        custom_text = request.form.get("custom_text")
+
+    if action == "file" and custom_text and str(custom_text).strip():
+        escaped_text = str(custom_text).replace('"', '\\"').replace('`', '\\`').replace('$', '\\$')
+        cmd = f'./sys_call_demo --file "{escaped_text}"'
+    else:
+        cmd = command_map[action]
+
     code, output = run_project_command(cmd)
 
     # Clean ANSI escape sequences for web rendering (or keep them for terminal viewer)

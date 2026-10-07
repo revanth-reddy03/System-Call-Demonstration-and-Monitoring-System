@@ -13,7 +13,7 @@
 #include "common.h"
 
 #define DEMO_FILE_PATH "sys_demo_testfile.txt"
-#define DEMO_BUFFER_SIZE 256
+#define DEMO_BUFFER_SIZE 1024
 
 /**
  * Executes a full walkthrough of file-related system calls:
@@ -24,8 +24,11 @@
  * 5. read() kernel-buffered data back into user-space
  * 6. close() reading descriptor
  *
+ * @param custom_data Optional custom string to write to the file.
+ *                    If NULL, the user will be prompted interactively,
+ *                    or a default text will be used in batch/automated mode.
  * @return 0 on success, non-zero on failure.
  */
-int demonstrate_file_ops(void);
+int demonstrate_file_ops(const char *custom_data);
 
 #endif /* FILE_OPS_H */

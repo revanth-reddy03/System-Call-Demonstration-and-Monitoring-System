@@ -51,17 +51,50 @@ function clearTerminal() {
         '<span style="color: #64748b;">Terminal initialized. Select an action above to execute.</span>\n';
 }
 
+// Modal controls for Custom File Input
+function openFileModal() {
+    const modal = document.getElementById("fileModal");
+    modal.style.display = "flex";
+    document.getElementById("fileInputText").focus();
+}
+
+function closeFileModal() {
+    document.getElementById("fileModal").style.display = "none";
+}
+
+function submitFileOps() {
+    const customText = document.getElementById("fileInputText").value;
+    closeFileModal();
+    runAction('file', customText);
+}
+
+// Close modal when clicking outside modal card
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById("fileModal");
+    if (e.target === modal) {
+        closeFileModal();
+    }
+});
+
 // Execute backend action
-async function runAction(action) {
+async function runAction(action, customText = null) {
     const statusText = document.getElementById("systemStatusText");
     statusText.innerText = `Executing ${action.toUpperCase()}...`;
     
-    logToTerminal(`make ${action}`, true);
+    if (action === 'file' && customText && customText.trim().length > 0) {
+        logToTerminal(`./sys_call_demo --file "${customText.trim()}"`, true);
+    } else {
+        logToTerminal(`make ${action}`, true);
+    }
 
     try {
-        const response = await fetch(`/api/run/${action}`, {
-            method: 'POST'
-        });
+        const fetchOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ custom_text: customText })
+        };
+
+        const response = await fetch(`/api/run/${action}`, fetchOptions);
         const data = await response.json();
 
         if (data.output) {

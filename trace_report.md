@@ -6,7 +6,7 @@
 
 ## 1. Executive Summary
 
-- **Total System Calls Intercepted**: 189
+- **Total System Calls Intercepted**: 192
 - **Unique System Call Types**: 7
 - **Intentional Error Handling Verifications**: 4
 
@@ -14,7 +14,7 @@
 
 | System Call | Subsystem Category | Invocations | Kernel Action & Architectural Insight |
 | :--- | :--- | :--- | :--- |
-| `write` | File I/O | 162 | Copies data from user-space buffer into kernel page cache/disk |
+| `write` | File I/O | 165 | Copies data from user-space buffer into kernel page cache/disk |
 | `close` | File System | 8 | Releases file descriptor index from process descriptor table |
 | `openat` | File System | 7 | Opens or creates a file at relative/absolute directory path into file descriptor table |
 | `read` | File I/O | 4 | Copies data from kernel page cache/disk into user-space buffer |
@@ -28,10 +28,10 @@ The following deliberate fault conditions were injected and verified via return 
 
 | PID | Syscall | Return Code | Detected `errno` | Inspected Call Arguments |
 | :--- | :--- | :--- | :--- | :--- |
-| `1249` | `openat` | `-1` | `ENOENT` | `AT_FDCWD, "non_existent_file_99999.xyz", O_RDONLY` |
-| `1249` | `read` | `-1` | `EBADF` | `888, 0x7ffd73538e40, 64` |
-| `1249` | `close` | `-1` | `EBADF` | `888` |
-| `1251` | `execve` | `-1` | `ENOENT` | `"/usr/bin/this_program_does_not_exist_xyz", ["/usr/bin/this_program_does_not_exist_xyz"], 0x7ffd73539070 /* 32 vars */` |
+| `506` | `openat` | `-1` | `ENOENT` | `AT_FDCWD, "non_existent_file_99999.xyz", O_RDONLY` |
+| `506` | `read` | `-1` | `EBADF` | `888, 0x7fff5c8f2660, 64` |
+| `506` | `close` | `-1` | `EBADF` | `888` |
+| `511` | `execve` | `-1` | `ENOENT` | `"/usr/bin/this_program_does_not_exist_xyz", ["/usr/bin/this_program_does_not_exist_xyz"], 0x7fff5c8f2890 /* 25 vars */` |
 
 ## 4. Kernel Boundary Interaction Highlights
 
