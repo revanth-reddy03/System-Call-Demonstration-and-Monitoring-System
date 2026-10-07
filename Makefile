@@ -12,7 +12,6 @@ BUILD_DIR = build
 TRACES_DIR = traces
 
 MAIN_TARGET = syscall_runner
-LEGACY_TARGET = sys_call_demo
 CHILD_TARGET = child_worker
 
 SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/file_ops.c $(SRC_DIR)/process_ops.c $(SRC_DIR)/error_ops.c
@@ -22,7 +21,6 @@ CHILD_SRC = $(SRC_DIR)/child_worker.c
 .PHONY: all clean run run-batch trace analyze test app dashboard help
 
 all: $(BUILD_DIR) $(MAIN_TARGET) $(CHILD_TARGET)
-	@cp -f $(MAIN_TARGET) $(LEGACY_TARGET)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -71,7 +69,7 @@ app: all
 dashboard: app
 
 clean:
-	rm -rf $(BUILD_DIR) $(MAIN_TARGET) $(LEGACY_TARGET) $(CHILD_TARGET) syscall_testfile.txt sys_demo_testfile.txt non_existent_file_99999.xyz $(TRACES_DIR)/*.log trace_report.md
+	rm -rf $(BUILD_DIR) $(MAIN_TARGET) $(CHILD_TARGET) syscall_testfile.txt non_existent_file_99999.xyz $(TRACES_DIR)/*.log trace_report.md
 
 help:
 	@echo "Available Makefile targets:"

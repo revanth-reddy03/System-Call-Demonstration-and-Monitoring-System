@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Script: run_trace.sh
-# Project: System Call Demonstration and Monitoring System
+# Project: System Call Monitoring and Execution System
 # Course:  Operating Systems and Systems Programming (25CS2104E)
 # Team 18: Akhil AD, Revanth Reddy, Advik
 # ==============================================================================
@@ -12,9 +12,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TRACES_DIR="${ROOT_DIR}/traces"
 BINARY="${ROOT_DIR}/syscall_runner"
-if [ ! -f "${BINARY}" ] && [ -f "${ROOT_DIR}/sys_call_demo" ]; then
-    BINARY="${ROOT_DIR}/sys_call_demo"
-fi
 
 # Terminal formatting
 BOLD='\033[1m'

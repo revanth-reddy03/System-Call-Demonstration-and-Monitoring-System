@@ -365,6 +365,7 @@ def execute_syscall():
         "return_value": ret_val,
         "status": status,
         "duration": duration,
+        "data": parsed.get("data", ""),
         "os_info": os_info,
         "raw_output": output,
         "history_entry": log_entry

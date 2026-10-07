@@ -67,7 +67,7 @@ static void print_usage(const char *prog_name) {
 }
 
 static void run_all_modules(void) {
-    execute_file_ops(NULL);
+    execute_file_ops("Automated system call batch data");
     execute_process_ops();
     execute_error_handling();
 

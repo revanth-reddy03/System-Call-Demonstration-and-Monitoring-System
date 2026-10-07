@@ -41,16 +41,17 @@ const SYSCALL_CONFIGS = {
         fields: `
             <div class="param-row">
                 <label>File Name</label>
-                <input type="text" class="param-input" id="paramFilename" value="test.txt">
+                <input type="text" class="param-input" id="paramFilename" value="test.txt" placeholder="e.g. test.txt">
             </div>
             <div class="param-row">
-                <label>Data to Write</label>
-                <input type="text" class="param-input" id="paramContent" value="Hello Operating Systems! Writing via system call.">
+                <label style="color: #38bdf8; font-weight: 600;">Data to Enter in File (Required)</label>
+                <input type="text" class="param-input" id="paramContent" placeholder="Enter custom text/data to write into the file..." value="" autofocus>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">* Enter the data you want the write() system call to store on disk.</div>
             </div>
         `,
-        userAction: 'write(fd, buffer, bytes)',
-        kernelAction: 'Copies bytes to page cache blocks',
-        resultAction: 'Returns bytes written count'
+        userAction: 'write(fd, user_buffer, bytes)',
+        kernelAction: 'Copies user-supplied bytes to kernel page cache',
+        resultAction: 'Returns total bytes written to disk'
     },
     close: {
         fields: `
@@ -163,15 +164,33 @@ function selectSyscall(name, el) {
 // Execute selected system call
 async function executeSelectedSyscall() {
     const btn = document.getElementById('btnExecuteCall');
-    btn.disabled = true;
-    btn.innerHTML = '<span>⏳ Executing System Call...</span>';
 
     const params = {};
     if (document.getElementById('paramFilename')) params.filename = document.getElementById('paramFilename').value;
     if (document.getElementById('paramMode')) params.mode = document.getElementById('paramMode').value;
-    if (document.getElementById('paramContent')) params.content = document.getElementById('paramContent').value;
+    
+    // Explicit validation: Ask the user to enter data for write()
+    if (currentSyscall === 'write') {
+        const contentInput = document.getElementById('paramContent');
+        const contentVal = contentInput ? contentInput.value.trim() : '';
+        if (!contentVal) {
+            alert("⚠️ Please enter the data you want to write into the file!");
+            if (contentInput) {
+                contentInput.focus();
+                contentInput.style.borderColor = '#ef4444';
+            }
+            return;
+        }
+        params.content = contentVal;
+    } else if (document.getElementById('paramContent')) {
+        params.content = document.getElementById('paramContent').value;
+    }
+
     if (document.getElementById('paramFd')) params.fd = parseInt(document.getElementById('paramFd').value);
     if (document.getElementById('paramDirname')) params.dirname = document.getElementById('paramDirname').value;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ Executing System Call...</span>';
 
     try {
         const res = await fetch('/api/execute', {
@@ -192,9 +211,23 @@ async function executeSelectedSyscall() {
 
         // Update OS Steps Walkthrough
         if (data.os_info && data.os_info.steps) {
-            document.getElementById('osStepsList').innerHTML = data.os_info.steps.map(s => 
+            let stepsHtml = data.os_info.steps.map(s => 
                 `<div class="os-step-item">${s}</div>`
             ).join('');
+
+            // If read() was executed and data was read back, show it prominently
+            if (currentSyscall === 'read' && data.data) {
+                stepsHtml += `
+                    <div class="os-step-item" style="border-left: 3px solid #10b981; background: rgba(16, 185, 129, 0.15); margin-top: 8px;">
+                        <strong style="color: #34d399;">📥 Content Read From File:</strong>
+                        <div style="font-family: monospace; font-size: 13px; color: #f1f5f9; margin-top: 4px; padding: 6px 10px; background: rgba(0,0,0,0.3); border-radius: 4px;">
+                            ${escapeHtml(data.data)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('osStepsList').innerHTML = stepsHtml;
         }
 
         // Add to history table
@@ -371,3 +404,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Periodic telemetry update every 2.5 seconds
     setInterval(loadSystemStatus, 2500);
 });
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}

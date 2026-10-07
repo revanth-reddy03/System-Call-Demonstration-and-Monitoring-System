@@ -1,4 +1,4 @@
-# System Call Demonstration and Monitoring System
+# System Call Monitoring and Execution System
 ## Comprehensive Project Report & Systems Programming Analysis
 
 **Course Code**: 25CS2104E — Operating Systems and Systems Programming  
@@ -21,7 +21,7 @@
 
 ## 1. Abstract
 
-This project presents an end-to-end, modular Linux-based **System Call Demonstration and Monitoring System** designed to bridge the gap between theoretical operating system concepts and runtime kernel execution. User-space programs interact with hardware resources exclusively via the kernel through system calls. This application implements core POSIX system calls across two foundational domains: **File Operations** (`open()`, `read()`, `write()`, `close()`) and **Process Management** (`fork()`, `execvp()`, `waitpid()`). Furthermore, the system incorporates rigorous error detection and diagnostic mechanisms leveraging `errno`, `perror()`, and `strerror()`.
+This project presents an end-to-end, modular Linux-based **System Call Monitoring and Execution System** designed to bridge the gap between theoretical operating system concepts and runtime kernel execution. User-space programs interact with hardware resources exclusively via the kernel through system calls. This application implements core POSIX system calls across two foundational domains: **File Operations** (`open()`, `read()`, `write()`, `close()`) and **Process Management** (`fork()`, `execvp()`, `waitpid()`). Furthermore, the system incorporates rigorous error detection and diagnostic mechanisms leveraging `errno`, `perror()`, and `strerror()`.
 
 To provide deep visibility into kernel-level execution, the program is coupled with an automated profiling engine based on Linux `strace`. The tracing subsystem captures all transitions across the user-to-kernel boundary, recording arguments, return values, and execution overhead. An accompanying analysis engine parses the generated traces, generating empirical reports that demystify CPU privilege level switching, file descriptor table allocation, and Process Control Block (PCB) lifecycle management.
 
@@ -33,7 +33,7 @@ In academic computer science education, operating systems concepts—such as the
 
 This project addresses this limitation by developing:
 1. A transparent, educational C application that directly invokes low-level POSIX system calls rather than standard I/O streams.
-2. A deliberate fault-injection module demonstrating how the Linux kernel flags errors using registers and how the C runtime maps these to `errno` constants.
+2. A deliberate fault-injection module illustrating how the Linux kernel flags errors using registers and how the C runtime maps these to `errno` constants.
 3. An automated monitoring and parsing pipeline utilizing `strace` to observe and quantify kernel activity during execution.
 
 ---
@@ -121,13 +121,13 @@ OSSP/
 │   ├── common.h         # ANSI styling, logging macros, system headers
 │   ├── file_ops.h       # Prototypes for file operations module
 │   ├── process_ops.h    # Prototypes for process lifecycle module
-│   └── error_demo.h     # Prototypes for errno & diagnostic module
+│   └── error_ops.h      # Prototypes for errno & diagnostic module
 ├── src/
 │   ├── main.c           # CLI interface (menu & automated batch modes)
-│   ├── file_ops.c       # open, write, read, close demonstration
-│   ├── process_ops.c    # fork, execvp, waitpid demonstration
-│   ├── error_demo.c     # Deliberate fault injection & errno checks
-│   └── child_worker.c   # Executed worker program for exec demo
+│   ├── file_ops.c       # open, write, read, close execution
+│   ├── process_ops.c    # fork, execvp, waitpid execution
+│   ├── error_ops.c      # Deliberate fault injection & errno checks
+│   └── child_worker.c   # Executed worker program for exec module
 ├── scripts/
 │   ├── run_trace.sh     # Strace orchestration script
 │   └── analyze_trace.py # Automated log parser & report generator
@@ -140,7 +140,7 @@ OSSP/
 ```
 
 ### 4.1 File Operations (`src/file_ops.c`)
-- **Creation & Write**: Invokes `open(DEMO_FILE_PATH, O_CREAT | O_WRONLY | O_TRUNC, 0644)`. Verifies that the kernel assigned `fd = 3`. Writes structured payload into `fd`, checks that returned byte count matches source string length, and closes descriptor via `close(fd)`.
+- **Creation & Write**: Invokes `open(DEFAULT_TEST_FILE, O_CREAT | O_WRONLY | O_TRUNC, 0644)`. Verifies that the kernel assigned `fd = 3`. Writes user payload into `fd`, checks that returned byte count matches source string length, and closes descriptor via `close(fd)`.
 - **Read Back**: Re-opens file with `O_RDONLY`. Allocates a zeroed user-space buffer and reads data via `read(fd, buffer, sizeof(buffer) - 1)`. Verifies contents and closes descriptor.
 
 ### 4.2 Process Management (`src/process_ops.c`)
@@ -149,7 +149,7 @@ OSSP/
 - **Child Worker (`src/child_worker.c`)**: Confirms retention of PID, prints arguments, simulates workload, and terminates cleanly with exit code `42`.
 - **Parent Context (`pid > 0`)**: Synchronizes with child via `waitpid(pid, &status, 0)`. Validates completion with `WIFEXITED(status)` and confirms exit code `42` using `WEXITSTATUS(status)`.
 
-### 4.3 Error Handling & `errno` (`src/error_demo.c`)
+### 4.3 Error Handling & `errno` (`src/error_ops.c`)
 - **Fault 1**: Attempting to open `non_existent_file_99999.xyz` in `O_RDONLY` mode. Return value: `-1`. Resulting `errno`: `2` (`ENOENT` — No such file or directory).
 - **Fault 2**: Reading from unassigned file descriptor `888`. Return value: `-1`. Resulting `errno`: `9` (`EBADF` — Bad file descriptor).
 - **Fault 3**: Closing unassigned file descriptor `888`. Return value: `-1`. Resulting `errno`: `9` (`EBADF`).
@@ -161,7 +161,7 @@ OSSP/
 
 Execution under `strace -f -c` yields the following profile of kernel service requests:
 
-| Syscall | % Time | Seconds | Calls | Errors | Primary OS Concept Demonstrated |
+| Syscall | % Time | Seconds | Calls | Errors | Primary OS Concept Handled |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `write` | 62.91% | 0.006129 | 174 | 0 | File I/O & Terminal Display |
 | `mprotect`| 16.12% | 0.001570 | 6 | 0 | Memory Page Protection (ELF loading) |
@@ -181,14 +181,14 @@ The automated test runner (`tests/test_runner.sh`) executes 12 rigorous test cas
 
 ```
 ======================================================================
-         AUTOMATED TEST SUITE: SYSTEM CALL DEMONSTRATION
+         AUTOMATED TEST SUITE: SYSTEM CALL EXECUTION & MONITORING
 ======================================================================
 
   [TEST] Clean build via make clean && make all ... PASSED
-  [TEST] Verify binary existence (sys_call_demo & child_worker) ... PASSED
+  [TEST] Verify binary existence (syscall_runner & child_worker) ... PASSED
   [TEST] Test command line help flag (--help) ... PASSED
   [TEST] Test File Operations Module (--file) ... PASSED
-  [TEST] Verify created demonstration file (sys_demo_testfile.txt) ... PASSED
+  [TEST] Verify created test file (syscall_testfile.txt) ... PASSED
   [TEST] Test Process Management Module (--process) ... PASSED
   [TEST] Test Error Handling & errno Module (--error) ... PASSED
   [TEST] Test Full Batch Execution Mode (--batch) ... PASSED
@@ -206,7 +206,7 @@ Test Results Summary: 12 Passed, 0 Failed
 
 ## 7. Conclusion
 
-The **System Call Demonstration and Monitoring System** satisfies all project objectives specified in the course curriculum (25CS2104E). By combining modular C systems programming with real-time `strace` profiling and automated log analysis, the system provides an educational, empirical demonstration of:
+The **System Call Monitoring and Execution System** satisfies all project objectives specified in the course curriculum (25CS2104E). By combining modular C systems programming with real-time `strace` profiling and automated log analysis, the system provides an educational, empirical investigation of:
 - How file descriptors serve as kernel handles.
 - How memory spaces are cloned and replaced during process creation.
 - How parent processes prevent zombie accumulation via synchronization.

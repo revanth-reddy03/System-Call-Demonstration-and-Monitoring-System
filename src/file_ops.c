@@ -117,9 +117,9 @@ int execute_file_ops(const char *custom_data) {
 
     if (custom_data != NULL && strlen(custom_data) > 0) {
         snprintf(write_buffer, sizeof(write_buffer), "%s\n", custom_data);
-        LOG_INFO("Using custom input data for file write operation.");
-    } else if (isatty(fileno(stdin))) {
-        printf(COLOR_BOLD COLOR_YELLOW "\n[PROMPT] Enter custom text to write into '%s':\n> " COLOR_RESET, DEFAULT_TEST_FILE);
+        LOG_INFO("Using input data: \"%s\"", custom_data);
+    } else {
+        printf(COLOR_BOLD COLOR_YELLOW "\n[PROMPT] Enter data to write into '%s':\n> " COLOR_RESET, DEFAULT_TEST_FILE);
         fflush(stdout);
         char input_line[FILE_BUFFER_SIZE - 64];
         if (fgets(input_line, sizeof(input_line), stdin)) {
@@ -132,15 +132,10 @@ int execute_file_ops(const char *custom_data) {
                 LOG_SUCCESS("User data captured: \"%s\"", input_line);
             }
         }
-    }
-
-    if (strlen(write_buffer) == 0) {
-        snprintf(write_buffer, sizeof(write_buffer),
-            "=== System Call Monitoring and Execution System ===\n"
-            "Operating Systems and Systems Programming (25CS2104E)\n"
-            "Team 18: Akhil AD, Revanth Reddy, Advik\n"
-            "Status: Data successfully transferred from User Space to Kernel Space.\n");
-        LOG_INFO("Using standard system text.");
+        if (strlen(write_buffer) == 0) {
+            snprintf(write_buffer, sizeof(write_buffer), "System Call File Data (Sample Text)\n");
+            LOG_INFO("No custom text entered; using sample data: \"System Call File Data (Sample Text)\"");
+        }
     }
 
     char read_buffer[FILE_BUFFER_SIZE];

@@ -2,7 +2,7 @@
 """
 ==============================================================================
 Script: analyze_trace.py
-Project: System Call Demonstration and Monitoring System
+Project: System Call Monitoring and Execution System
 Course:  Operating Systems and Systems Programming (25CS2104E)
 Team 18: Akhil AD, Revanth Reddy, Advik
 ==============================================================================
@@ -51,7 +51,7 @@ def parse_strace_line(line):
     """
     Parses a single line of strace output.
     Format example:
-    [pid 455] openat(AT_FDCWD, "sys_demo_testfile.txt", O_WRONLY|O_CREAT|O_TRUNC, 0644) = 3
+    [pid 455] openat(AT_FDCWD, "syscall_testfile.txt", O_WRONLY|O_CREAT|O_TRUNC, 0644) = 3
     [pid 455] openat(AT_FDCWD, "non_existent_file.xyz", O_RDONLY) = -1 ENOENT (No such file or directory)
     """
     line = line.strip()

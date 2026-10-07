@@ -1,5 +1,4 @@
 # Binaries
-sys_call_demo
 syscall_runner
 child_worker
 *.exe
@@ -9,8 +8,7 @@ child_worker
 build/
 *.o
 
-# Temporary demonstration files
-sys_demo_testfile.txt
+# Temporary execution files
 syscall_testfile.txt
 non_existent_file_99999.xyz
 
