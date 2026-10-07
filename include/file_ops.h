@@ -1,9 +1,9 @@
 /**
  * ============================================================================
- * Project: System Call Demonstration and Monitoring System
+ * Project: System Call Monitoring and Execution System
  * File: file_ops.h
- * Description: Declarations for file management system call demonstrations
- *              (open, write, read, close, file descriptors).
+ * Description: Declarations for file management system call execution:
+ *              open, write, read, close, file descriptors, mkdir, rmdir.
  * ============================================================================
  */
 
@@ -12,23 +12,23 @@
 
 #include "common.h"
 
-#define DEMO_FILE_PATH "sys_demo_testfile.txt"
-#define DEMO_BUFFER_SIZE 1024
+#define DEFAULT_TEST_FILE "syscall_testfile.txt"
+#define FILE_BUFFER_SIZE 1024
 
 /**
- * Executes a full walkthrough of file-related system calls:
- * 1. open() with O_CREAT | O_WRONLY | O_TRUNC
- * 2. write() user-space buffer into file descriptor
- * 3. close() writing descriptor
- * 4. open() with O_RDONLY
- * 5. read() kernel-buffered data back into user-space
- * 6. close() reading descriptor
+ * Executes a full walkthrough of file-related system calls.
  *
  * @param custom_data Optional custom string to write to the file.
- *                    If NULL, the user will be prompted interactively,
- *                    or a default text will be used in batch/automated mode.
  * @return 0 on success, non-zero on failure.
  */
-int demonstrate_file_ops(const char *custom_data);
+int execute_file_ops(const char *custom_data);
+
+/* Individual system call execution functions with execution time reporting */
+int execute_syscall_open(const char *filename, const char *mode, double *elapsed_ms);
+int execute_syscall_read(const char *filename, char *out_buf, size_t buf_size, double *elapsed_ms);
+int execute_syscall_write(const char *filename, const char *content, double *elapsed_ms);
+int execute_syscall_close(int fd, double *elapsed_ms);
+int execute_syscall_mkdir(const char *dirname, double *elapsed_ms);
+int execute_syscall_rmdir(const char *dirname, double *elapsed_ms);
 
 #endif /* FILE_OPS_H */

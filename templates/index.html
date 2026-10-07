@@ -3,263 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Call Demonstration & Monitoring Dashboard</title>
+    <title>System Call Monitoring & Execution Dashboard</title>
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 
-<div class="container">
+<div class="dashboard-wrapper">
 
-    <!-- Top Header Card -->
-    <header class="header-card">
-        <div class="header-left">
-            <h1>System Call Demonstration & Monitoring Dashboard</h1>
-            <p>
-                Operating Systems and Systems Programming (25CS2104E) • Term-I
-                <span class="team-badge">Team 18 • Section 03</span>
-            </p>
-            <p style="font-size: 12px; color: #64748b; margin-top: 6px;">
-                <strong>Team Members:</strong> Akhil AD (2520030423) • Revanth Reddy (2520030424) • Advik (2520039623) | 
-                <strong>Faculty Guide:</strong> Dr. K. Hema
-            </p>
-        </div>
-        <div class="header-right">
-            <div class="status-pill">
-                <div class="pulse-dot"></div>
-                <span id="systemStatusText">System Idle (Ready)</span>
+    <!-- Top Header -->
+    <header class="main-header">
+        <div class="header-content">
+            <div>
+                <h1 class="main-title">SYSTEM CALL MONITORING & EXECUTION DASHBOARD</h1>
+                <p class="sub-title">Operating Systems and Systems Programming (25CS2104E) • Team 18 • Dr. K. Hema</p>
+            </div>
+            <div class="status-indicator">
+                <span class="pulse-indicator"></span>
+                <span id="liveStatusText">System Status: ONLINE</span>
             </div>
         </div>
     </header>
 
-    <!-- Execution Control Panel -->
-    <section class="controls-card">
-        <div class="section-title">
-            <span>⚡ Interactive Execution Controls</span>
-        </div>
-        <div class="btn-group">
-            <button class="btn btn-primary" onclick="runAction('batch')">
-                <span>🚀 Run Full Demo</span>
-            </button>
-            <button class="btn btn-secondary" onclick="openFileModal()">
-                <span>📁 File Operations</span>
-            </button>
-            <button class="btn btn-secondary" onclick="runAction('process')">
-                <span>⚙️ Process Lifecycle</span>
-            </button>
-            <button class="btn btn-secondary" onclick="runAction('error')">
-                <span>⚠️ Error Demo (errno)</span>
-            </button>
-            <button class="btn btn-purple" onclick="runAction('trace')">
-                <span>🔬 Kernel Trace (strace)</span>
-            </button>
-            <button class="btn btn-purple" onclick="runAction('analyze')">
-                <span>📊 Analyze Traces</span>
-            </button>
-            <button class="btn btn-secondary" onclick="runAction('test')">
-                <span>🧪 Run Test Suite (12/12)</span>
-            </button>
-            <button class="btn btn-danger" onclick="runAction('clean')">
-                <span>🧹 Clean Workspace</span>
-            </button>
+    <!-- System Status Metric Cards -->
+    <section class="status-section">
+        <h2 class="section-label">System Status</h2>
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="metric-label">Processes</div>
+                <div class="metric-value" id="statProcesses">--</div>
+                <div class="metric-sub">Active Running Tasks</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Syscalls</div>
+                <div class="metric-value highlight-cyan" id="statSyscalls">--</div>
+                <div class="metric-sub">Kernel Traps Handled</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">CPU</div>
+                <div class="metric-value highlight-yellow" id="statCPU">--</div>
+                <div class="metric-sub">Processor Load</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Memory</div>
+                <div class="metric-value highlight-purple" id="statMemory">--</div>
+                <div class="metric-sub">RAM Allocation</div>
+            </div>
         </div>
     </section>
 
-    <!-- Middle Visualization Grid -->
-    <div class="dashboard-grid">
+    <!-- Main 2-Column Split: Syscall Selector & Execution Details -->
+    <div class="workspace-grid">
 
-        <!-- Column 1: Process Lifecycle & File Descriptors -->
-        <div style="display: flex; flex-direction: column; gap: 24px;">
-
-            <!-- Process Lifecycle Flow -->
-            <div class="card">
-                <div class="section-title">
-                    <span>🔄 Process Lifecycle & Memory Space Replacement</span>
+        <!-- Left Column: System Call Selector List -->
+        <div class="panel syscall-selector-panel">
+            <h3 class="panel-title">SYSTEM CALLS</h3>
+            
+            <div class="syscall-group">
+                <span class="group-heading">Process Operations</span>
+                <div class="syscall-item active" onclick="selectSyscall('fork', this)">
+                    <span class="radio-dot"></span>
+                    <span class="call-name">fork()</span>
+                    <span class="call-desc">Process Creation (COW)</span>
                 </div>
-                <div class="process-flow">
-                    <div class="flow-step" id="flowFork">
-                        <div class="flow-header">
-                            <span>1. fork() System Call</span>
-                            <span class="tag-badge" style="color: #00d2ff;">task_struct clone</span>
-                        </div>
-                        <div class="flow-desc">
-                            Parent clones process table entry via Copy-On-Write (COW). Returns <code>0</code> to child and new child PID to parent.
-                        </div>
-                    </div>
-
-                    <div class="flow-step child-step" id="flowExec">
-                        <div class="flow-header">
-                            <span>2. execvp("./child_worker")</span>
-                            <span class="tag-badge" style="color: #d946ef;">Image Replacement</span>
-                        </div>
-                        <div class="flow-desc">
-                            Child discards memory segments (text, data, heap, stack) and loads ELF binary image. <strong>Retains original PID!</strong>
-                        </div>
-                    </div>
-
-                    <div class="flow-step wait-step" id="flowWait">
-                        <div class="flow-header">
-                            <span>3. waitpid() & Reaping</span>
-                            <span class="tag-badge" style="color: #00e676;">Exit Code: 42</span>
-                        </div>
-                        <div class="flow-desc">
-                            Parent changes state to <code>TASK_INTERRUPTIBLE</code>, collects child status, and prevents <strong>Zombie (&lt;defunct&gt;)</strong> processes.
-                        </div>
-                    </div>
+                <div class="syscall-item" onclick="selectSyscall('exec', this)">
+                    <span class="radio-dot"></span>
+                    <span class="call-name">exec()</span>
+                    <span class="call-desc">Image Replacement</span>
+                </div>
+                <div class="syscall-item" onclick="selectSyscall('wait', this)">
+                    <span class="radio-dot"></span>
+                    <span class="call-name">wait()</span>
+                    <span class="call-desc">Process Sync & Reaping</span>
+                </div>
+                <div class="syscall-item" onclick="selectSyscall('getpid', this)">
+                    <span class="radio-dot"></span>
+                    <span class="call-name">getpid()</span>
+                    <span class="call-desc">Fetch Current Process ID</span>
+                </div>
+                <div class="syscall-item" onclick="selectSyscall('getppid', this)">
+                    <span class="radio-dot"></span>
+                    <span class="call-name">getppid()</span>
+                    <span class="call-desc">Fetch Parent Process ID</span>
                 </div>
             </div>
 
-            <!-- File Descriptor Table Grid -->
-            <div class="card">
-                <div class="section-title">
-                    <span>🗂️ Process File Descriptor Table (Lowest Free Index Policy)</span>
+            <div class="syscall-group">
+                <span class="group-heading">File Operations</span>
+                <div class="syscall-item" onclick="selectSyscall('open', this)">
+                    <span class="radio-dot"></span>
+                    <span class="call-name">open()</span>
+                    <span class="call-desc">Create / Open Descriptor</span>
                 </div>
-                <div class="fd-grid">
-                    <div class="fd-slot active">
-                        <div class="fd-num">0</div>
-                        <div class="fd-name">stdin</div>
-                        <div class="fd-type">Standard Input</div>
-                    </div>
-                    <div class="fd-slot active">
-                        <div class="fd-num">1</div>
-                        <div class="fd-name">stdout</div>
-                        <div class="fd-type">Standard Output</div>
-                    </div>
-                    <div class="fd-slot active">
-                        <div class="fd-num">2</div>
-                        <div class="fd-name">stderr</div>
-                        <div class="fd-type">Standard Error</div>
-                    </div>
-                    <div class="fd-slot" id="fd3">
-                        <div class="fd-num">3</div>
-                        <div class="fd-name">demo_file</div>
-                        <div class="fd-type" id="fd3State">Allocated via open()</div>
-                    </div>
+                <div class="syscall-item" onclick="selectSyscall('read', this)">
+                    <span class="radio-dot"></span>
+                    <span class="call-name">read()</span>
+                    <span class="call-desc">Buffer Read from VFS</span>
+                </div>
+                <div class="syscall-item" onclick="selectSyscall('write', this)">
+                    <span class="radio-dot"></span>
+                    <span class="call-name">write()</span>
+                    <span class="call-desc">Transfer Buffer to Disk</span>
+                </div>
+                <div class="syscall-item" onclick="selectSyscall('close', this)">
+                    <span class="radio-dot"></span>
+                    <span class="call-name">close()</span>
+                    <span class="call-desc">Release File Descriptor</span>
                 </div>
             </div>
 
-        </div>
-
-        <!-- Column 2: strace Analytics Charts -->
-        <div style="display: flex; flex-direction: column; gap: 24px;">
-
-            <div class="card">
-                <div class="section-title">
-                    <span>📈 System Call Frequency Distribution</span>
+            <div class="syscall-group">
+                <span class="group-heading">Directory Operations</span>
+                <div class="syscall-item" onclick="selectSyscall('mkdir', this)">
+                    <span class="radio-dot"></span>
+                    <span class="call-name">mkdir()</span>
+                    <span class="call-desc">Create Directory Inode</span>
                 </div>
-                <div class="chart-container">
-                    <canvas id="chartSyscallFreq"></canvas>
+                <div class="syscall-item" onclick="selectSyscall('rmdir', this)">
+                    <span class="radio-dot"></span>
+                    <span class="call-name">rmdir()</span>
+                    <span class="call-desc">Remove Directory Inode</span>
                 </div>
-            </div>
-
-            <div class="card">
-                <div class="section-title">
-                    <span>⏱️ Kernel CPU Execution Time (%)</span>
-                </div>
-                <div class="chart-container">
-                    <canvas id="chartSyscallTime"></canvas>
-                </div>
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- Live Terminal Stream Viewer -->
-    <div class="terminal-card">
-        <div class="terminal-header">
-            <div class="window-dots">
-                <div class="dot red"></div>
-                <div class="dot yellow"></div>
-                <div class="dot green"></div>
-            </div>
-            <div class="terminal-title">Linux Execution Console (WSL2 / Ubuntu)</div>
-            <div>
-                <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="clearTerminal()">Clear</button>
-            </div>
-        </div>
-        <div class="terminal-body" id="terminalOutput">
-<span style="color: #64748b;">================================================================================
-  System Call Demonstration and Monitoring System (Flask Dashboard Online)
-  Ready to execute. Click any action button above to begin.
-================================================================================</span>
-        </div>
-    </div>
-
-    <!-- Data Tables: Syscalls & Errors -->
-    <div class="dashboard-grid">
-
-        <!-- Syscall Events Table -->
-        <div class="card">
-            <div class="section-title">
-                <span>🔎 Intercepted System Call Stream (strace)</span>
-            </div>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>PID</th>
-                            <th>Syscall</th>
-                            <th>Arguments</th>
-                            <th>Return</th>
-                        </tr>
-                    </thead>
-                    <tbody id="syscallTableBody">
-                        <tr><td colspan="4" style="color: #64748b; text-align: center;">Run "Kernel Trace" to inspect real-time traps.</td></tr>
-                    </tbody>
-                </table>
             </div>
         </div>
 
-        <!-- Deliberate Errors Audit -->
-        <div class="card">
-            <div class="section-title">
-                <span>⚠️ Intentional Fault Injection & errno Audit</span>
+        <!-- Right Column: System Call Details & Execution Panel -->
+        <div class="panel syscall-details-panel">
+            <div class="details-header">
+                <h3 class="panel-title">SYSTEM CALL DETAILS</h3>
+                <span class="active-call-badge" id="activeCallBadge">Call: fork()</span>
             </div>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>PID</th>
-                            <th>Syscall</th>
-                            <th>Detected errno</th>
-                            <th>Target Call</th>
-                        </tr>
-                    </thead>
-                    <tbody id="errorTableBody">
-                        <tr><td colspan="4" style="color: #64748b; text-align: center;">Run "Error Demo" to audit fault injection.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
 
-    </div>
+            <!-- Dynamic Parameter Input Box -->
+            <div class="param-box" id="paramContainer">
+                <!-- Dynamically injected inputs based on selected call -->
+            </div>
 
-    <!-- Modal Dialog for File Operations Custom Data Input -->
-    <div id="fileModal" class="modal-backdrop" style="display: none;">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>📁 File Operations: Custom Data Input</h3>
-                <button class="modal-close-btn" onclick="closeFileModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">
-                    Enter the custom data/text you want the user application to write to <code>sys_demo_testfile.txt</code> via the <code>write()</code> system call:
-                </p>
-                <textarea id="fileInputText" rows="4" class="modal-textarea" placeholder="Type custom text here... (e.g., Hello Operating Systems! Testing open(), write(), and read() system calls.)"></textarea>
-                <div style="font-size: 12px; color: #64748b; margin-top: 8px;">
-                    💡 If left empty, default demonstration text will be used automatically.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeFileModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="submitFileOps()">
-                    <span>💾 Write & Execute via Syscalls</span>
+            <!-- Action Button -->
+            <div style="margin: 16px 0;">
+                <button class="btn btn-execute" id="btnExecuteCall" onclick="executeSelectedSyscall()">
+                    <span>▶ [ Execute System Call ]</span>
                 </button>
             </div>
+
+            <!-- Execution Result Telemetry -->
+            <div class="telemetry-grid">
+                <div class="telemetry-card">
+                    <div class="telemetry-label">Return Value</div>
+                    <div class="telemetry-value" id="resReturnValue">--</div>
+                </div>
+                <div class="telemetry-card">
+                    <div class="telemetry-label">Status</div>
+                    <div class="telemetry-value" id="resStatus">--</div>
+                </div>
+                <div class="telemetry-card">
+                    <div class="telemetry-label">Execution Time</div>
+                    <div class="telemetry-value" id="resTime">--</div>
+                </div>
+            </div>
+
+            <!-- What Happens Inside OS Diagram -->
+            <div class="os-transition-card">
+                <h4 class="transition-title">What Happens Inside the OS</h4>
+                <div class="boundary-flow">
+                    <div class="boundary-node user">
+                        <span class="node-layer">User Space (Ring 3)</span>
+                        <span class="node-action" id="stepUser">Application issues call</span>
+                    </div>
+                    <div class="boundary-arrow">➔ syscall trap ➔</div>
+                    <div class="boundary-node kernel">
+                        <span class="node-layer">Kernel Space (Ring 0)</span>
+                        <span class="node-action" id="stepKernel">VFS / Scheduler dispatch</span>
+                    </div>
+                    <div class="boundary-arrow">➔ %rax ➔</div>
+                    <div class="boundary-node return">
+                        <span class="node-layer">User Result</span>
+                        <span class="node-action" id="stepResult">Returns to Application</span>
+                    </div>
+                </div>
+                <div class="os-steps-list" id="osStepsList">
+                    <div class="os-step-item">Select a system call above and click Execute to observe the kernel transition.</div>
+                </div>
+            </div>
         </div>
+
     </div>
+
+    <!-- Bottom Section: System Call Activity / Monitor -->
+    <section class="panel activity-panel">
+        <div class="activity-header">
+            <h3 class="panel-title">SYSTEM CALL ACTIVITY / MONITOR</h3>
+            <div class="activity-search">
+                <input type="text" id="logSearchInput" placeholder="Filter calls (e.g. open, SUCCESS)..." onkeyup="filterActivityTable()">
+            </div>
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <button class="tab-btn active" id="tabBtnHistory" onclick="switchTab('history')">📋 Call History</button>
+            <button class="tab-btn" id="tabBtnProcess" onclick="switchTab('process')">🖥️ Process Monitor</button>
+            <button class="tab-btn" id="tabBtnStats" onclick="switchTab('stats')">📊 Statistics & Frequency</button>
+            <button class="tab-btn-secondary" onclick="exportCSV()">📥 Export CSV</button>
+            <button class="tab-btn-danger" onclick="clearHistoryLogs()">🗑️ Clear Logs</button>
+        </div>
+
+        <!-- View 1: Call History Table -->
+        <div id="viewHistory" class="tab-view active">
+            <div class="table-container">
+                <table class="data-table" id="activityTable">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Process</th>
+                            <th>System Call</th>
+                            <th>Parameters</th>
+                            <th>Return Value</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <!-- Injected dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- View 2: Process Monitor Table -->
+        <div id="viewProcess" class="tab-view">
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>PID</th>
+                            <th>Process Name</th>
+                            <th>CPU Usage</th>
+                            <th>Memory Usage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="processTableBody">
+                        <!-- Injected dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- View 3: Statistics Frequency Bars -->
+        <div id="viewStats" class="tab-view">
+            <div class="stats-overview">
+                <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">
+                    Total System Calls Logged: <strong style="color: var(--primary);" id="totalCallsSummary">1,284</strong>
+                </div>
+                <div class="bars-container" id="statsBarsContainer">
+                    <!-- Progress bars injected dynamically -->
+                </div>
+            </div>
+        </div>
+
+    </section>
 
 </div>
 

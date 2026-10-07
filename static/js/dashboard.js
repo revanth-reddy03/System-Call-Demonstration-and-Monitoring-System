@@ -1,263 +1,373 @@
 /**
- * System Call Demonstration & Monitoring System
- * Dashboard Frontend Controller
+ * System Call Monitoring and Execution System
+ * Real-time Dashboard Controller
  */
 
-let freqChart = null;
-let timeChart = null;
+let currentSyscall = 'open';
 
-// ANSI to HTML color converter
-function ansiToHtml(text) {
-    if (!text) return "";
-    let clean = text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
-    const ansiMap = {
-        '\\033\\[1;31m': '<span style="color: #ff5252; font-weight: bold;">',
-        '\\033\\[1;32m': '<span style="color: #00e676; font-weight: bold;">',
-        '\\033\\[1;33m': '<span style="color: #ffb300; font-weight: bold;">',
-        '\\033\\[1;34m': '<span style="color: #40a9ff; font-weight: bold;">',
-        '\\033\\[1;35m': '<span style="color: #d946ef; font-weight: bold;">',
-        '\\033\\[1;36m': '<span style="color: #00d2ff; font-weight: bold;">',
-        '\\033\\[1;37m': '<span style="color: #ffffff; font-weight: bold;">',
-        '\\033\\[1m': '<span style="font-weight: bold;">',
-        '\\033\\[2m': '<span style="opacity: 0.6;">',
-        '\\033\\[0m': '</span>'
-    };
-
-    for (let key in ansiMap) {
-        clean = clean.replace(new RegExp(key, 'g'), ansiMap[key]);
+// Param form definitions for each system call
+const SYSCALL_CONFIGS = {
+    open: {
+        fields: `
+            <div class="param-row">
+                <label>File Name</label>
+                <input type="text" class="param-input" id="paramFilename" value="test.txt" placeholder="e.g. test.txt">
+            </div>
+            <div class="param-row">
+                <label>Access Mode</label>
+                <select class="param-select" id="paramMode">
+                    <option value="w" selected>Write / Create (O_CREAT | O_WRONLY | O_TRUNC)</option>
+                    <option value="r">Read Only (O_RDONLY)</option>
+                    <option value="a">Append (O_CREAT | O_WRONLY | O_APPEND)</option>
+                </select>
+            </div>
+        `,
+        userAction: 'open("test.txt", O_WRONLY)',
+        kernelAction: 'VFS directory lookup & allocate fd',
+        resultAction: 'Returns File Descriptor (fd)'
+    },
+    read: {
+        fields: `
+            <div class="param-row">
+                <label>File Name to Read</label>
+                <input type="text" class="param-input" id="paramFilename" value="test.txt">
+            </div>
+        `,
+        userAction: 'read(fd, buffer, 1024)',
+        kernelAction: 'Page cache transfer to user space',
+        resultAction: 'Returns total bytes read'
+    },
+    write: {
+        fields: `
+            <div class="param-row">
+                <label>File Name</label>
+                <input type="text" class="param-input" id="paramFilename" value="test.txt">
+            </div>
+            <div class="param-row">
+                <label>Data to Write</label>
+                <input type="text" class="param-input" id="paramContent" value="Hello Operating Systems! Writing via system call.">
+            </div>
+        `,
+        userAction: 'write(fd, buffer, bytes)',
+        kernelAction: 'Copies bytes to page cache blocks',
+        resultAction: 'Returns bytes written count'
+    },
+    close: {
+        fields: `
+            <div class="param-row">
+                <label>File Descriptor to Close</label>
+                <input type="number" class="param-input" id="paramFd" value="3">
+            </div>
+        `,
+        userAction: 'close(fd)',
+        kernelAction: 'Decrements ref count & releases fd',
+        resultAction: 'Returns 0 (Success) or -1'
+    },
+    fork: {
+        fields: `
+            <div class="param-row">
+                <label>Operation Details</label>
+                <div style="font-size: 13px; color: #cbd5e1;">Creates duplicate child process via Copy-On-Write (COW).</div>
+            </div>
+        `,
+        userAction: 'fork()',
+        kernelAction: 'Clones task_struct & memory pages',
+        resultAction: 'Returns 0 to child, PID to parent'
+    },
+    exec: {
+        fields: `
+            <div class="param-row">
+                <label>Binary Program</label>
+                <input type="text" class="param-input" id="paramBinary" value="./child_worker" readonly>
+            </div>
+        `,
+        userAction: 'execvp("./child_worker", argv)',
+        kernelAction: 'Discards memory & loads ELF binary',
+        resultAction: 'Replaces image; retains PID'
+    },
+    wait: {
+        fields: `
+            <div class="param-row">
+                <label>Process Synchronization</label>
+                <div style="font-size: 13px; color: #cbd5e1;">Parent waits for child process termination and reaps zombie status.</div>
+            </div>
+        `,
+        userAction: 'waitpid(child_pid, &status, 0)',
+        kernelAction: 'Suspends parent & reaps child PCB',
+        resultAction: 'Returns child termination exit code'
+    },
+    getpid: {
+        fields: `
+            <div class="param-row">
+                <label>Process Info Query</label>
+                <div style="font-size: 13px; color: #cbd5e1;">Fetches current process identifier from active task_struct.</div>
+            </div>
+        `,
+        userAction: 'getpid()',
+        kernelAction: 'Reads current->pid from PCB',
+        resultAction: 'Returns active process ID'
+    },
+    getppid: {
+        fields: `
+            <div class="param-row">
+                <label>Process Info Query</label>
+                <div style="font-size: 13px; color: #cbd5e1;">Fetches parent process identifier from task_struct hierarchy.</div>
+            </div>
+        `,
+        userAction: 'getppid()',
+        kernelAction: 'Reads current->real_parent->tgid',
+        resultAction: 'Returns parent process ID'
+    },
+    mkdir: {
+        fields: `
+            <div class="param-row">
+                <label>New Directory Name</label>
+                <input type="text" class="param-input" id="paramDirname" value="os_test_directory">
+            </div>
+        `,
+        userAction: 'mkdir(dirname, 0755)',
+        kernelAction: 'Creates directory inode in VFS',
+        resultAction: 'Returns 0 on success'
+    },
+    rmdir: {
+        fields: `
+            <div class="param-row">
+                <label>Directory Name to Remove</label>
+                <input type="text" class="param-input" id="paramDirname" value="os_test_directory">
+            </div>
+        `,
+        userAction: 'rmdir(dirname)',
+        kernelAction: 'Unlinks directory inode from dentry',
+        resultAction: 'Returns 0 on success'
     }
-    return clean;
-}
+};
 
-// Log message to terminal console
-function logToTerminal(message, isCommand = false) {
-    const terminal = document.getElementById("terminalOutput");
-    const timestamp = new Date().toLocaleTimeString();
+// Switch active syscall selection
+function selectSyscall(name, el) {
+    currentSyscall = name;
     
-    if (isCommand) {
-        terminal.innerHTML += `\n<span style="color: #00d2ff; font-weight: bold;">[${timestamp}] $ ${message}</span>\n`;
-    } else {
-        terminal.innerHTML += ansiToHtml(message);
-    }
-    terminal.scrollTop = terminal.scrollHeight;
-}
+    document.querySelectorAll('.syscall-item').forEach(item => item.classList.remove('active'));
+    if (el) el.classList.add('active');
 
-function clearTerminal() {
-    document.getElementById("terminalOutput").innerHTML = 
-        '<span style="color: #64748b;">Terminal initialized. Select an action above to execute.</span>\n';
-}
-
-// Modal controls for Custom File Input
-function openFileModal() {
-    const modal = document.getElementById("fileModal");
-    modal.style.display = "flex";
-    document.getElementById("fileInputText").focus();
-}
-
-function closeFileModal() {
-    document.getElementById("fileModal").style.display = "none";
-}
-
-function submitFileOps() {
-    const customText = document.getElementById("fileInputText").value;
-    closeFileModal();
-    runAction('file', customText);
-}
-
-// Close modal when clicking outside modal card
-window.addEventListener('click', (e) => {
-    const modal = document.getElementById("fileModal");
-    if (e.target === modal) {
-        closeFileModal();
-    }
-});
-
-// Execute backend action
-async function runAction(action, customText = null) {
-    const statusText = document.getElementById("systemStatusText");
-    statusText.innerText = `Executing ${action.toUpperCase()}...`;
+    document.getElementById('activeCallBadge').innerText = `Call: ${name}()`;
     
-    if (action === 'file' && customText && customText.trim().length > 0) {
-        logToTerminal(`./sys_call_demo --file "${customText.trim()}"`, true);
-    } else {
-        logToTerminal(`make ${action}`, true);
-    }
+    const config = SYSCALL_CONFIGS[name] || SYSCALL_CONFIGS.open;
+    document.getElementById('paramContainer').innerHTML = config.fields;
+
+    // Update diagram actions
+    document.getElementById('stepUser').innerText = config.userAction;
+    document.getElementById('stepKernel').innerText = config.kernelAction;
+    document.getElementById('stepResult').innerText = config.resultAction;
+}
+
+// Execute selected system call
+async function executeSelectedSyscall() {
+    const btn = document.getElementById('btnExecuteCall');
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ Executing System Call...</span>';
+
+    const params = {};
+    if (document.getElementById('paramFilename')) params.filename = document.getElementById('paramFilename').value;
+    if (document.getElementById('paramMode')) params.mode = document.getElementById('paramMode').value;
+    if (document.getElementById('paramContent')) params.content = document.getElementById('paramContent').value;
+    if (document.getElementById('paramFd')) params.fd = parseInt(document.getElementById('paramFd').value);
+    if (document.getElementById('paramDirname')) params.dirname = document.getElementById('paramDirname').value;
 
     try {
-        const fetchOptions = {
+        const res = await fetch('/api/execute', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ custom_text: customText })
-        };
-
-        const response = await fetch(`/api/run/${action}`, fetchOptions);
-        const data = await response.json();
-
-        if (data.output) {
-            logToTerminal(data.output);
-        }
-
-        if (data.success) {
-            statusText.innerText = "System Idle (Ready)";
-        } else {
-            statusText.innerText = `Failed (Exit Code ${data.return_code})`;
-        }
-
-        // Animate visual widgets based on action
-        updateInteractiveWidgets(action);
-
-        // Fetch fresh traces if profiling actions were run
-        if (['batch', 'trace', 'analyze', 'test'].includes(action)) {
-            loadTraces();
-        }
-
-    } catch (err) {
-        logToTerminal(`[ERROR] Network error: ${err.message}`);
-        statusText.innerText = "Error";
-    }
-}
-
-// Animate visualizers based on the executed module
-function updateInteractiveWidgets(action) {
-    const fd3 = document.getElementById("fd3");
-    const flowFork = document.getElementById("flowFork");
-    const flowExec = document.getElementById("flowExec");
-    const flowWait = document.getElementById("flowWait");
-
-    if (action === 'file' || action === 'batch') {
-        fd3.classList.add("active");
-        document.getElementById("fd3State").innerText = "Active (0644)";
-    } else if (action === 'clean') {
-        fd3.classList.remove("active");
-        document.getElementById("fd3State").innerText = "Closed / Unassigned";
-    }
-
-    if (action === 'process' || action === 'batch') {
-        flowFork.style.borderColor = "var(--primary)";
-        flowExec.style.borderColor = "var(--purple)";
-        flowWait.style.borderColor = "var(--success)";
-    }
-}
-
-// Load and render trace data for charts and tables
-async function loadTraces() {
-    try {
-        const res = await fetch('/api/traces');
+            body: JSON.stringify({ syscall: currentSyscall, params })
+        });
         const data = await res.json();
 
-        const calls = data.summary.calls || [];
-        updateCharts(calls);
-        updateSyscallTable(data.events || []);
-        updateErrorTable(data.errors || []);
+        // Update telemetry cards
+        document.getElementById('resReturnValue').innerText = data.return_value;
+        
+        const statusEl = document.getElementById('resStatus');
+        statusEl.innerText = data.status;
+        statusEl.className = 'telemetry-value ' + (data.status === 'SUCCESS' ? 'status-badge-success' : 'status-badge-error');
+
+        document.getElementById('resTime').innerText = data.duration;
+
+        // Update OS Steps Walkthrough
+        if (data.os_info && data.os_info.steps) {
+            document.getElementById('osStepsList').innerHTML = data.os_info.steps.map(s => 
+                `<div class="os-step-item">${s}</div>`
+            ).join('');
+        }
+
+        // Add to history table
+        prependHistoryRow(data.history_entry);
+
+        // Refresh telemetry metrics
+        loadSystemStatus();
+        loadSyscallStats();
 
     } catch (e) {
-        console.error("Failed to load traces:", e);
+        console.error("Execution failed:", e);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>▶ [ Execute System Call ]</span>';
     }
 }
 
-// Render Chart.js Analytics
-function updateCharts(calls) {
-    if (!calls || calls.length === 0) return;
+// Prepend row to history table
+function prependHistoryRow(entry) {
+    if (!entry) return;
+    const tbody = document.getElementById('historyTableBody');
+    const isSuccess = entry.status === 'SUCCESS';
 
-    const topCalls = calls.slice(0, 7);
-    const labels = topCalls.map(c => c.syscall);
-    const callCounts = topCalls.map(c => c.calls);
-    const times = topCalls.map(c => c.percent_time);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td>${entry.time}</td>
+        <td>${entry.process}</td>
+        <td><strong style="color: var(--primary);">${entry.syscall}</strong></td>
+        <td>${entry.params}</td>
+        <td>${entry.return_value}</td>
+        <td class="${isSuccess ? 'status-ok' : 'status-err'}">${entry.status}</td>
+        <td>${entry.duration}</td>
+    `;
+    tbody.insertBefore(tr, tbody.firstChild);
+}
 
-    const colors = [
-        '#00d2ff', '#9d4edd', '#00e676', '#ffb300', 
-        '#ff5252', '#3a86ff', '#8338ec'
-    ];
+// Load System Status Cards (CPU, Mem, Procs, Syscalls)
+async function loadSystemStatus() {
+    try {
+        const res = await fetch('/api/system_status');
+        const data = await res.json();
 
-    // Donut Chart: Syscall Frequencies
-    const ctxFreq = document.getElementById('chartSyscallFreq').getContext('2d');
-    if (freqChart) freqChart.destroy();
-    freqChart = new Chart(ctxFreq, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: callCounts,
-                backgroundColor: colors,
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 11 } } }
-            }
-        }
+        document.getElementById('statProcesses').innerText = data.processes;
+        document.getElementById('statSyscalls').innerText = Number(data.syscalls).toLocaleString();
+        document.getElementById('statCPU').innerText = data.cpu;
+        document.getElementById('statMemory').innerText = data.memory;
+    } catch (e) {
+        console.error("Status load error:", e);
+    }
+}
+
+// Load History
+async function loadHistory() {
+    try {
+        const res = await fetch('/api/history');
+        const list = await res.json();
+
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = list.map(item => `
+            <tr>
+                <td>${item.time}</td>
+                <td>${item.process}</td>
+                <td><strong style="color: var(--primary);">${item.syscall}</strong></td>
+                <td>${item.params}</td>
+                <td>${item.return_value}</td>
+                <td class="${item.status === 'SUCCESS' ? 'status-ok' : 'status-err'}">${item.status}</td>
+                <td>${item.duration}</td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        console.error("History load error:", e);
+    }
+}
+
+// Load Running Processes
+async function loadProcessList() {
+    try {
+        const res = await fetch('/api/process_list');
+        const procs = await res.json();
+
+        const tbody = document.getElementById('processTableBody');
+        tbody.innerHTML = procs.map(p => `
+            <tr>
+                <td>${p.pid}</td>
+                <td><strong style="color: #fff;">${p.name}</strong></td>
+                <td><span style="color: var(--warning);">${p.cpu}</span></td>
+                <td><span style="color: var(--purple);">${p.memory}</span></td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        console.error("Process load error:", e);
+    }
+}
+
+// Load Frequency Stats Bars
+async function loadSyscallStats() {
+    try {
+        const res = await fetch('/api/syscall_stats');
+        const data = await res.json();
+
+        document.getElementById('totalCallsSummary').innerText = Number(data.total).toLocaleString();
+
+        const counts = data.counts || {};
+        const maxVal = Math.max(...Object.values(counts), 1);
+        const container = document.getElementById('statsBarsContainer');
+
+        container.innerHTML = Object.entries(counts).map(([name, count]) => {
+            const pct = Math.round((count / maxVal) * 100);
+            return `
+                <div class="bar-row">
+                    <div class="bar-name">${name}()</div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: ${pct}%;"></div>
+                    </div>
+                    <div class="bar-count">${count}</div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error("Stats load error:", e);
+    }
+}
+
+// Switch Bottom Tabs
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
+
+    if (tabId === 'history') {
+        document.getElementById('tabBtnHistory').classList.add('active');
+        document.getElementById('viewHistory').classList.add('active');
+    } else if (tabId === 'process') {
+        document.getElementById('tabBtnProcess').classList.add('active');
+        document.getElementById('viewProcess').classList.add('active');
+        loadProcessList();
+    } else if (tabId === 'stats') {
+        document.getElementById('tabBtnStats').classList.add('active');
+        document.getElementById('viewStats').classList.add('active');
+        loadSyscallStats();
+    }
+}
+
+// Filter history table
+function filterActivityTable() {
+    const filter = document.getElementById('logSearchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#historyTableBody tr');
+
+    rows.forEach(r => {
+        const text = r.innerText.toLowerCase();
+        r.style.display = text.includes(filter) ? '' : 'none';
     });
-
-    // Bar Chart: Kernel CPU Time %
-    const ctxTime = document.getElementById('chartSyscallTime').getContext('2d');
-    if (timeChart) timeChart.destroy();
-    timeChart = new Chart(ctxTime, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: '% CPU Time in Kernel',
-                data: times,
-                backgroundColor: 'rgba(0, 210, 255, 0.75)',
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
-                y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-            }
-        }
-    });
 }
 
-// Populate Syscall Events Table
-function updateSyscallTable(events) {
-    const tbody = document.getElementById('syscallTableBody');
-    if (!events || events.length === 0) return;
-
-    tbody.innerHTML = events.slice(0, 15).map(e => `
-        <tr>
-            <td><code style="color: #94a3b8;">${e.pid}</code></td>
-            <td><strong style="color: #00d2ff;">${e.name}</strong></td>
-            <td><code style="font-size: 11px; color: #cbd5e1;">${e.args}</code></td>
-            <td>
-                ${e.is_error ? 
-                    `<span class="badge-err">${e.ret} ${e.error_name}</span>` : 
-                    `<span class="badge-ok">${e.ret}</span>`}
-            </td>
-        </tr>
-    `).join('');
+// Export CSV
+function exportCSV() {
+    window.location.href = '/api/export_csv';
 }
 
-// Populate Errors Audit Table
-function updateErrorTable(errors) {
-    const tbody = document.getElementById('errorTableBody');
-    if (!errors || errors.length === 0) return;
-
-    tbody.innerHTML = errors.map(err => `
-        <tr>
-            <td><code>${err.pid}</code></td>
-            <td><strong style="color: #ffb300;">${err.name}</strong></td>
-            <td><span class="badge-err">${err.error_name || 'ERROR'}</span></td>
-            <td><code>${err.args}</code></td>
-        </tr>
-    `).join('');
+// Clear History
+async function clearHistoryLogs() {
+    if (confirm("Clear all recorded system call activity logs?")) {
+        await fetch('/api/clear_history', { method: 'POST' });
+        document.getElementById('historyTableBody').innerHTML = '';
+    }
 }
 
-// Initial Load
+// Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
-    loadTraces();
+    selectSyscall('open', document.querySelector('.syscall-item[onclick*="open"]'));
+    loadSystemStatus();
+    loadHistory();
+    loadSyscallStats();
+
+    // Periodic telemetry update every 2.5 seconds
+    setInterval(loadSystemStatus, 2500);
 });

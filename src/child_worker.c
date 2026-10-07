@@ -1,9 +1,9 @@
 /**
  * ============================================================================
- * Project: System Call Demonstration and Monitoring System
+ * Project: System Call Monitoring and Execution System
  * File: child_worker.c
  * Description: Standalone worker program invoked via execvp() by the child
- *              process to demonstrate address space replacement, PID retention,
+ *              process to execute address space replacement, PID retention,
  *              and passing of exit status back to the waiting parent.
  * ============================================================================
  */

@@ -1,9 +1,9 @@
 /**
  * ============================================================================
- * Project: System Call Demonstration and Monitoring System
+ * Project: System Call Monitoring and Execution System
  * File: process_ops.h
- * Description: Declarations for process management system call demonstrations
- *              (fork, exec family, wait/waitpid, PCB lifecycle).
+ * Description: Declarations for process management system calls:
+ *              fork, exec family, wait/waitpid, getpid, getppid.
  * ============================================================================
  */
 
@@ -13,13 +13,18 @@
 #include "common.h"
 
 /**
- * Demonstrates process management system calls:
- * 1. fork() creates a child process (PCB duplicate)
- * 2. In child: execvp() replaces address space with child_worker binary
- * 3. In parent: waitpid() synchronizes execution and retrieves termination status
+ * Executes a full process management sequence:
+ * fork() -> execvp() -> waitpid()
  *
  * @return 0 on success, non-zero on failure.
  */
-int demonstrate_process_ops(void);
+int execute_process_ops(void);
+
+/* Individual process system call execution functions */
+pid_t execute_syscall_fork(double *elapsed_ms);
+int execute_syscall_exec(const char *binary, char *const argv[], double *elapsed_ms);
+pid_t execute_syscall_wait(int *exit_status, double *elapsed_ms);
+pid_t execute_syscall_getpid(double *elapsed_ms);
+pid_t execute_syscall_getppid(double *elapsed_ms);
 
 #endif /* PROCESS_OPS_H */

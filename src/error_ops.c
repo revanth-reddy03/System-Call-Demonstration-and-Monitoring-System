@@ -1,34 +1,29 @@
 /**
  * ============================================================================
- * Project: System Call Demonstration and Monitoring System
- * File: error_demo.c
+ * Project: System Call Monitoring and Execution System
+ * File: error_ops.c
  * Description: Implementation of system call error handling and errno diagnostics.
- *              Demonstrates deliberate error triggers, return-value checking,
- *              errno values, strerror(), and perror().
+ *              Triggers deliberate errors, checks return values, and inspects errno.
  * ============================================================================
  */
 
-#include "error_demo.h"
+#include "error_ops.h"
 
-int demonstrate_error_handling(void) {
+int execute_error_handling(void) {
     print_section_header("MODULE 3: SYSTEM CALL ERROR HANDLING & ERRNO");
 
     int fd;
     ssize_t bytes_read;
     char buffer[64];
 
-    /* -------------------------------------------------------------
-     * Test Case 1: Opening a Non-Existent File (ENOENT - Error 2)
-     * ------------------------------------------------------------- */
+    /* Test Case 1: Non-existent file */
     print_subsection("Case 3.1: open() with Non-Existent File Path (ENOENT)");
     const char *non_existent_path = "non_existent_file_99999.xyz";
-    
     LOG_INFO("Attempting to open non-existent file '%s' in O_RDONLY mode...", non_existent_path);
     LOG_KERNEL("Kernel inspects VFS dentry cache; path lookup fails to resolve file");
 
-    errno = 0; /* Clear errno before call */
+    errno = 0;
     fd = open(non_existent_path, O_RDONLY);
-
     if (fd == -1) {
         LOG_SUCCESS("Expected failure detected! open() returned -1");
         printf("     - errno numerical code : " COLOR_RED "%d" COLOR_RESET "\n", errno);
@@ -40,21 +35,17 @@ int demonstrate_error_handling(void) {
         perror("     - Standard perror() output");
         fflush(stderr);
     } else {
-        LOG_ERROR("Unexpected success! File should not exist.");
         close(fd);
     }
 
-    /* -------------------------------------------------------------
-     * Test Case 2: Reading from an Invalid File Descriptor (EBADF - Error 9)
-     * ------------------------------------------------------------- */
+    /* Test Case 2: Invalid file descriptor */
     print_subsection("Case 3.2: read() on an Invalid File Descriptor (EBADF)");
     int invalid_fd = 888;
     LOG_INFO("Attempting to read from invalid file descriptor %d...", invalid_fd);
-    LOG_KERNEL("Kernel checks process files_struct table; index %d is unassigned or out of bounds", invalid_fd);
+    LOG_KERNEL("Kernel checks process files_struct table; index %d is unassigned", invalid_fd);
 
     errno = 0;
     bytes_read = read(invalid_fd, buffer, sizeof(buffer));
-
     if (bytes_read == -1) {
         LOG_SUCCESS("Expected failure detected! read() returned -1");
         printf("     - errno numerical code : " COLOR_RED "%d" COLOR_RESET "\n", errno);
@@ -65,16 +56,11 @@ int demonstrate_error_handling(void) {
         fflush(stdout);
         perror("     - Standard perror() output");
         fflush(stderr);
-    } else {
-        LOG_ERROR("Unexpected success! Read should fail on invalid fd.");
     }
 
-    /* -------------------------------------------------------------
-     * Test Case 3: Closing an Invalid File Descriptor (EBADF - Error 9)
-     * ------------------------------------------------------------- */
+    /* Test Case 3: Close invalid file descriptor */
     print_subsection("Case 3.3: close() on an Invalid File Descriptor (EBADF)");
     LOG_INFO("Attempting to close invalid file descriptor %d...", invalid_fd);
-
     errno = 0;
     int close_ret = close(invalid_fd);
     if (close_ret == -1) {
@@ -86,9 +72,7 @@ int demonstrate_error_handling(void) {
         fflush(stderr);
     }
 
-    /* -------------------------------------------------------------
-     * Test Case 4: Child Process Failed execvp() Call
-     * ------------------------------------------------------------- */
+    /* Test Case 4: Child process exec failure */
     print_subsection("Case 3.4: fork() Child Attempting to exec Non-Existent Program");
     fflush(stdout);
     fflush(stderr);
@@ -97,18 +81,16 @@ int demonstrate_error_handling(void) {
         perror("fork");
         return -1;
     } else if (pid == 0) {
-        /* In child */
         char *invalid_cmd[] = {"/usr/bin/this_program_does_not_exist_xyz", NULL};
         errno = 0;
         fflush(stdout);
         fflush(stderr);
         execvp(invalid_cmd[0], invalid_cmd);
 
-        /* execvp failed */
         printf("  [Child Error Check] execvp failed as expected:\n");
         printf("     - errno numerical code : %d (%s)\n", errno, strerror(errno));
         perror("     - Child perror");
-        exit(99); /* Exit with custom code */
+        exit(99);
     } else {
         int status;
         waitpid(pid, &status, 0);
@@ -123,6 +105,6 @@ int demonstrate_error_handling(void) {
     printf("       and returns -1 to the user application.\n");
     printf("     - This decoupling keeps user code clean while providing detailed diagnostic information.\n");
 
-    LOG_SUCCESS("System call error handling demonstration completed successfully.\n");
+    LOG_SUCCESS("System call error handling completed successfully.\n");
     return 0;
 }

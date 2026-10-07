@@ -1,5 +1,6 @@
 # Binaries
 sys_call_demo
+syscall_runner
 child_worker
 *.exe
 *.out
@@ -10,6 +11,7 @@ build/
 
 # Temporary demonstration files
 sys_demo_testfile.txt
+syscall_testfile.txt
 non_existent_file_99999.xyz
 
 # Logs and profiling traces

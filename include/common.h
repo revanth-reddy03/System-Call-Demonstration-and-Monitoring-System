@@ -15,6 +15,11 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <stdbool.h>
+#include <time.h>
+
+static inline double get_time_diff_ms(struct timespec start, struct timespec end) {
+    return (end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_nsec - start.tv_nsec) / 1000000.0;
+}
 
 /* ANSI Terminal Color Codes for clear, educational output */
 #define COLOR_RESET   "\033[0m"

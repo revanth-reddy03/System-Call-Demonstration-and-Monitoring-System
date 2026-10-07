@@ -11,7 +11,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TRACES_DIR="${ROOT_DIR}/traces"
-BINARY="${ROOT_DIR}/sys_call_demo"
+BINARY="${ROOT_DIR}/syscall_runner"
+if [ ! -f "${BINARY}" ] && [ -f "${ROOT_DIR}/sys_call_demo" ]; then
+    BINARY="${ROOT_DIR}/sys_call_demo"
+fi
 
 # Terminal formatting
 BOLD='\033[1m'

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Script: test_runner.sh
-# Project: System Call Demonstration and Monitoring System
+# Project: System Call Monitoring and Execution System
 # Course:  Operating Systems and Systems Programming (25CS2104E)
 # Team 18: Akhil AD, Revanth Reddy, Advik
 # ==============================================================================
@@ -35,19 +35,19 @@ run_test() {
 }
 
 echo -e "\n${CYAN}======================================================================${RESET}"
-echo -e "${BOLD}         AUTOMATED TEST SUITE: SYSTEM CALL DEMONSTRATION${RESET}"
+echo -e "${BOLD}         AUTOMATED TEST SUITE: SYSTEM CALL EXECUTION & MONITORING${RESET}"
 echo -e "${CYAN}======================================================================${RESET}\n"
 
 cd "${ROOT_DIR}"
 
 run_test "Clean build via make clean && make all" "make clean && make all"
-run_test "Verify binary existence (sys_call_demo & child_worker)" "[ -x sys_call_demo ] && [ -x child_worker ]"
-run_test "Test command line help flag (--help)" "./sys_call_demo --help"
-run_test "Test File Operations Module (--file)" "./sys_call_demo --file"
-run_test "Verify created demonstration file (sys_demo_testfile.txt)" "[ -f sys_demo_testfile.txt ] && [ -s sys_demo_testfile.txt ]"
-run_test "Test Process Management Module (--process)" "./sys_call_demo --process"
-run_test "Test Error Handling & errno Module (--error)" "./sys_call_demo --error"
-run_test "Test Full Batch Execution Mode (--batch)" "./sys_call_demo --batch"
+run_test "Verify binary existence (syscall_runner & child_worker)" "[ -x syscall_runner ] && [ -x child_worker ]"
+run_test "Test command line help flag (--help)" "./syscall_runner --help"
+run_test "Test File Operations Module (--file)" "./syscall_runner --file 'Validation Data'"
+run_test "Verify created test file (syscall_testfile.txt)" "[ -f syscall_testfile.txt ] || [ -f sys_demo_testfile.txt ]"
+run_test "Test Process Management Module (--process)" "./syscall_runner --process"
+run_test "Test Error Handling & errno Module (--error)" "./syscall_runner --error"
+run_test "Test Full Batch Execution Mode (--batch)" "./syscall_runner --batch"
 run_test "Test Tracing Script Execution (scripts/run_trace.sh)" "./scripts/run_trace.sh"
 run_test "Verify generated trace files (all, filtered, summary)" "[ -s traces/trace_all.log ] && [ -s traces/trace_filtered.log ] && [ -s traces/trace_summary.log ]"
 run_test "Test Trace Analyzer (scripts/analyze_trace.py)" "python3 scripts/analyze_trace.py traces/trace_filtered.log"

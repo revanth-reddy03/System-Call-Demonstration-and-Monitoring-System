@@ -1,5 +1,5 @@
 # ==============================================================================
-# Makefile: System Call Demonstration and Monitoring System
+# Makefile: System Call Monitoring and Execution System
 # Course:   Operating Systems and Systems Programming (25CS2104E)
 # Team 18:  Akhil AD, Revanth Reddy, Advik
 # ==============================================================================
@@ -11,16 +11,18 @@ INC_DIR = include
 BUILD_DIR = build
 TRACES_DIR = traces
 
-MAIN_TARGET = sys_call_demo
+MAIN_TARGET = syscall_runner
+LEGACY_TARGET = sys_call_demo
 CHILD_TARGET = child_worker
 
-SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/file_ops.c $(SRC_DIR)/process_ops.c $(SRC_DIR)/error_demo.c
-OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/file_ops.o $(BUILD_DIR)/process_ops.o $(BUILD_DIR)/error_demo.o
+SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/file_ops.c $(SRC_DIR)/process_ops.c $(SRC_DIR)/error_ops.c
+OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/file_ops.o $(BUILD_DIR)/process_ops.o $(BUILD_DIR)/error_ops.o
 CHILD_SRC = $(SRC_DIR)/child_worker.c
 
-.PHONY: all clean run run-batch trace analyze test help
+.PHONY: all clean run run-batch trace analyze test app dashboard help
 
 all: $(BUILD_DIR) $(MAIN_TARGET) $(CHILD_TARGET)
+	@cp -f $(MAIN_TARGET) $(LEGACY_TARGET)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -63,21 +65,21 @@ app: all
 	elif command -v python >/dev/null 2>&1; then \
 		python app.py; \
 	else \
-		echo "Python is required to run the Web Dashboard."; \
+		echo "Python is required to run the Dashboard."; \
 	fi
 
 dashboard: app
 
 clean:
-	rm -rf $(BUILD_DIR) $(MAIN_TARGET) $(CHILD_TARGET) sys_demo_testfile.txt non_existent_file_99999.xyz $(TRACES_DIR)/*.log trace_report.md
+	rm -rf $(BUILD_DIR) $(MAIN_TARGET) $(LEGACY_TARGET) $(CHILD_TARGET) syscall_testfile.txt sys_demo_testfile.txt non_existent_file_99999.xyz $(TRACES_DIR)/*.log trace_report.md
 
 help:
 	@echo "Available Makefile targets:"
-	@echo "  make            - Build both main demo and child worker binaries"
+	@echo "  make            - Build system call runner and child worker"
 	@echo "  make run        - Launch interactive CLI menu"
-	@echo "  make run-batch  - Run all demo modules non-interactively"
+	@echo "  make run-batch  - Run all modules non-interactively"
 	@echo "  make trace      - Run under strace to monitor system calls"
 	@echo "  make analyze    - Trace and parse logs into structured report"
 	@echo "  make test       - Execute automated test suite"
-	@echo "  make app        - Launch the Web GUI Dashboard at http://localhost:5000"
+	@echo "  make app        - Launch Web Monitoring Dashboard at http://localhost:5000"
 	@echo "  make clean      - Remove build artifacts, traces, and temporary files"
