@@ -18,7 +18,7 @@ SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/file_ops.c $(SRC_DIR)/process_ops.c $(SRC_DI
 OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/file_ops.o $(BUILD_DIR)/process_ops.o $(BUILD_DIR)/error_demo.o
 CHILD_SRC = $(SRC_DIR)/child_worker.c
 
-.PHONY: all clean run run-batch trace analyze test demo auto help
+.PHONY: all clean run run-batch trace analyze test help
 
 all: $(BUILD_DIR) $(MAIN_TARGET) $(CHILD_TARGET)
 
@@ -57,25 +57,27 @@ test: all
 	@chmod +x tests/test_runner.sh
 	./tests/test_runner.sh
 
-demo:
-	@chmod +x demo.sh
-	./demo.sh
+app: all
+	@if command -v python3 >/dev/null 2>&1; then \
+		python3 app.py; \
+	elif command -v python >/dev/null 2>&1; then \
+		python app.py; \
+	else \
+		echo "Python is required to run the Web Dashboard."; \
+	fi
 
-auto:
-	@chmod +x demo.sh
-	./demo.sh --auto
+dashboard: app
 
 clean:
 	rm -rf $(BUILD_DIR) $(MAIN_TARGET) $(CHILD_TARGET) sys_demo_testfile.txt non_existent_file_99999.xyz $(TRACES_DIR)/*.log trace_report.md
 
 help:
 	@echo "Available Makefile targets:"
-	@echo "  make auto       - Run COMPLETE pipeline automatically (Build -> Test -> Trace -> Report)"
-	@echo "  make demo       - Launch unified Master Menu"
 	@echo "  make            - Build both main demo and child worker binaries"
 	@echo "  make run        - Launch interactive CLI menu"
 	@echo "  make run-batch  - Run all demo modules non-interactively"
 	@echo "  make trace      - Run under strace to monitor system calls"
 	@echo "  make analyze    - Trace and parse logs into structured report"
 	@echo "  make test       - Execute automated test suite"
+	@echo "  make app        - Launch the Web GUI Dashboard at http://localhost:5000"
 	@echo "  make clean      - Remove build artifacts, traces, and temporary files"

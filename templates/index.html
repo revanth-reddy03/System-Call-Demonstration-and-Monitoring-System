@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Call Demonstration & Monitoring Dashboard</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Top Header Card -->
+    <header class="header-card">
+        <div class="header-left">
+            <h1>System Call Demonstration & Monitoring Dashboard</h1>
+            <p>
+                Operating Systems and Systems Programming (25CS2104E) • Term-I
+                <span class="team-badge">Team 18 • Section 03</span>
+            </p>
+            <p style="font-size: 12px; color: #64748b; margin-top: 6px;">
+                <strong>Team Members:</strong> Akhil AD (2520030423) • Revanth Reddy (2520030424) • Advik (2520039623) | 
+                <strong>Faculty Guide:</strong> Dr. K. Hema
+            </p>
+        </div>
+        <div class="header-right">
+            <div class="status-pill">
+                <div class="pulse-dot"></div>
+                <span id="systemStatusText">System Idle (Ready)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Execution Control Panel -->
+    <section class="controls-card">
+        <div class="section-title">
+            <span>⚡ Interactive Execution Controls</span>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="runAction('batch')">
+                <span>🚀 Run Full Demo</span>
+            </button>
+            <button class="btn btn-secondary" onclick="runAction('file')">
+                <span>📁 File Operations</span>
+            </button>
+            <button class="btn btn-secondary" onclick="runAction('process')">
+                <span>⚙️ Process Lifecycle</span>
+            </button>
+            <button class="btn btn-secondary" onclick="runAction('error')">
+                <span>⚠️ Error Demo (errno)</span>
+            </button>
+            <button class="btn btn-purple" onclick="runAction('trace')">
+                <span>🔬 Kernel Trace (strace)</span>
+            </button>
+            <button class="btn btn-purple" onclick="runAction('analyze')">
+                <span>📊 Analyze Traces</span>
+            </button>
+            <button class="btn btn-secondary" onclick="runAction('test')">
+                <span>🧪 Run Test Suite (12/12)</span>
+            </button>
+            <button class="btn btn-danger" onclick="runAction('clean')">
+                <span>🧹 Clean Workspace</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- Middle Visualization Grid -->
+    <div class="dashboard-grid">
+
+        <!-- Column 1: Process Lifecycle & File Descriptors -->
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+
+            <!-- Process Lifecycle Flow -->
+            <div class="card">
+                <div class="section-title">
+                    <span>🔄 Process Lifecycle & Memory Space Replacement</span>
+                </div>
+                <div class="process-flow">
+                    <div class="flow-step" id="flowFork">
+                        <div class="flow-header">
+                            <span>1. fork() System Call</span>
+                            <span class="tag-badge" style="color: #00d2ff;">task_struct clone</span>
+                        </div>
+                        <div class="flow-desc">
+                            Parent clones process table entry via Copy-On-Write (COW). Returns <code>0</code> to child and new child PID to parent.
+                        </div>
+                    </div>
+
+                    <div class="flow-step child-step" id="flowExec">
+                        <div class="flow-header">
+                            <span>2. execvp("./child_worker")</span>
+                            <span class="tag-badge" style="color: #d946ef;">Image Replacement</span>
+                        </div>
+                        <div class="flow-desc">
+                            Child discards memory segments (text, data, heap, stack) and loads ELF binary image. <strong>Retains original PID!</strong>
+                        </div>
+                    </div>
+
+                    <div class="flow-step wait-step" id="flowWait">
+                        <div class="flow-header">
+                            <span>3. waitpid() & Reaping</span>
+                            <span class="tag-badge" style="color: #00e676;">Exit Code: 42</span>
+                        </div>
+                        <div class="flow-desc">
+                            Parent changes state to <code>TASK_INTERRUPTIBLE</code>, collects child status, and prevents <strong>Zombie (&lt;defunct&gt;)</strong> processes.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Descriptor Table Grid -->
+            <div class="card">
+                <div class="section-title">
+                    <span>🗂️ Process File Descriptor Table (Lowest Free Index Policy)</span>
+                </div>
+                <div class="fd-grid">
+                    <div class="fd-slot active">
+                        <div class="fd-num">0</div>
+                        <div class="fd-name">stdin</div>
+                        <div class="fd-type">Standard Input</div>
+                    </div>
+                    <div class="fd-slot active">
+                        <div class="fd-num">1</div>
+                        <div class="fd-name">stdout</div>
+                        <div class="fd-type">Standard Output</div>
+                    </div>
+                    <div class="fd-slot active">
+                        <div class="fd-num">2</div>
+                        <div class="fd-name">stderr</div>
+                        <div class="fd-type">Standard Error</div>
+                    </div>
+                    <div class="fd-slot" id="fd3">
+                        <div class="fd-num">3</div>
+                        <div class="fd-name">demo_file</div>
+                        <div class="fd-type" id="fd3State">Allocated via open()</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Column 2: strace Analytics Charts -->
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+
+            <div class="card">
+                <div class="section-title">
+                    <span>📈 System Call Frequency Distribution</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartSyscallFreq"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">
+                    <span>⏱️ Kernel CPU Execution Time (%)</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartSyscallTime"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Live Terminal Stream Viewer -->
+    <div class="terminal-card">
+        <div class="terminal-header">
+            <div class="window-dots">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+            </div>
+            <div class="terminal-title">Linux Execution Console (WSL2 / Ubuntu)</div>
+            <div>
+                <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="clearTerminal()">Clear</button>
+            </div>
+        </div>
+        <div class="terminal-body" id="terminalOutput">
+<span style="color: #64748b;">================================================================================
+  System Call Demonstration and Monitoring System (Flask Dashboard Online)
+  Ready to execute. Click any action button above to begin.
+================================================================================</span>
+        </div>
+    </div>
+
+    <!-- Data Tables: Syscalls & Errors -->
+    <div class="dashboard-grid">
+
+        <!-- Syscall Events Table -->
+        <div class="card">
+            <div class="section-title">
+                <span>🔎 Intercepted System Call Stream (strace)</span>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>PID</th>
+                            <th>Syscall</th>
+                            <th>Arguments</th>
+                            <th>Return</th>
+                        </tr>
+                    </thead>
+                    <tbody id="syscallTableBody">
+                        <tr><td colspan="4" style="color: #64748b; text-align: center;">Run "Kernel Trace" to inspect real-time traps.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Deliberate Errors Audit -->
+        <div class="card">
+            <div class="section-title">
+                <span>⚠️ Intentional Fault Injection & errno Audit</span>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>PID</th>
+                            <th>Syscall</th>
+                            <th>Detected errno</th>
+                            <th>Target Call</th>
+                        </tr>
+                    </thead>
+                    <tbody id="errorTableBody">
+                        <tr><td colspan="4" style="color: #64748b; text-align: center;">Run "Error Demo" to audit fault injection.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

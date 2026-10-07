@@ -16,6 +16,10 @@ non_existent_file_99999.xyz
 traces/*.log
 *.log
 
+# Python cache
+__pycache__/
+*.pyc
+
 # Editor and IDE metadata
 .vscode/
 .idea/

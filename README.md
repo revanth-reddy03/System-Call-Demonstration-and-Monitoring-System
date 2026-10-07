@@ -105,25 +105,26 @@ This generates two executable binaries:
 
 ## Usage Guide
 
-### Quick Start: All-in-One Master Runner
-Run the entire pipeline (Clean $\to$ Build $\to$ Test $\to$ Demo $\to$ Trace $\to$ Report) with a single command:
+### 1. Interactive Web Dashboard App (Recommended for Presentation)
+Launch the modern Web Dashboard with real-time charts and live visualizers:
 ```bash
-make auto
-# or
-./demo.sh --auto
+python app.py
+# or via Makefile
+make app
 ```
+Open your browser and navigate to: **`http://localhost:5000`**
 
-Or open the unified interactive launcher:
-```bash
-make demo
-# or
-./demo.sh
-```
+**Dashboard Features:**
+- ⚡ **One-Click Execution Controls**: Run File Ops, Process Lifecycle, Error Demo, or Full Test Suite from the browser.
+- 🔄 **Process Lifecycle Visualizer**: Animated flow of `fork()`, address space replacement via `execvp()`, and parent `waitpid()`.
+- 🗂️ **Interactive File Descriptor Table**: Live grid tracking allocations for `stdin (0)`, `stdout (1)`, `stderr (2)`, and `demo_file (3)`.
+- 📊 **Real-Time `strace` Analytics (Chart.js)**: Donut and Bar charts of system call frequencies and CPU execution time %.
+- 💻 **Live Linux Terminal Viewer**: Real-time console streaming execution logs.
 
 ---
 
-### 1. Interactive Menu
-Launch the interactive CLI menu:
+### 2. Interactive CLI Menu
+Launch the interactive terminal menu:
 ```bash
 make run
 # or
