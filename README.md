@@ -29,35 +29,36 @@ An interactive, university-grade operating systems monitoring and execution syst
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│        SYSTEM CALL MONITORING & EXECUTION DASHBOARD         │
+│    SYS_CALL // KERNEL MONITORING & EXECUTION DASHBOARD      │
 ├─────────────────────────────────────────────────────────────┤
-│  System Status                                              │
+│  System Status                                [Live Sync]   │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐   │
 │  │ Processes│ │ Syscalls │ │ CPU      │ │ Memory       │   │
-│  │    42    │ │   1,284  │ │  37 %    │ │   6.2 GB     │   │
+│  │    42    │ │   1,284  │ │  14.7 %  │ │   8.4 GB     │   │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────────┘   │
 ├───────────────────────┬─────────────────────────────────────┤
-│ SYSTEM CALLS          │ SYSTEM CALL DETAILS                 │
-│                       │                                     │
-│ ○ fork()              │ Call: open()                        │
-│ ○ exec()              │ Parameters: test.txt                │
-│ ○ wait()              │ Return Value: 3                     │
-│ ○ getpid()            │ Status: SUCCESS                     │
-│ ○ getppid()           │ Execution Time: 0.42 ms             │
-│ ○ open()              │                                     │
-│ ○ read()              │ [ Execute System Call ]             │
-│ ○ write()             │                                     │
-│ ○ close()             │ What Happens in OS (Kernel diagram) │
+│ SYSTEM CALL           │ SYSTEM CALL DETAILS                 │
+│ [All][Proc][File][Dir]│ Signature: int open(...)            │
+│                       │ Parameters: test.txt (mode: w)      │
+│ ○ fork()              │ Return Value: 3           [%rax]    │
+│ ○ exec()              │ Status: SUCCESS           [errno]   │
+│ ○ open()              │ Duration: 0.42 ms                   │
+│ ○ read()              │ [ Execute System Call ] (Ctrl+Enter)│
+│ ○ write()             │ ─────────────────────────────────── │
+│ ○ close()             │ What Happens Inside the OS:         │
+│ ○ wait()              │ Ring 3 -> Syscall Trap -> Ring 0    │
+│ ○ getpid() / getppid()│ [📥 Content Read Back from File]    │
 │ ○ mkdir() / rmdir()   │                                     │
 ├───────────────────────┴─────────────────────────────────────┤
 │              SYSTEM CALL ACTIVITY / MONITOR                 │
 │ Time       Process       System Call    Status    Duration  │
 │ 10:42:01   syscall_run   open()         SUCCESS   0.42 ms   │
-│ 10:42:02   syscall_run   read()         SUCCESS   0.31 ms   │
-│ 10:42:03   syscall_run   write()        SUCCESS   0.51 ms   │
+│ 10:42:02   syscall_run   write()        SUCCESS   0.51 ms   │
+│ 10:42:03   syscall_run   read()         SUCCESS   0.31 ms   │
 │ 10:42:04   syscall_run   close()        SUCCESS   0.12 ms   │
 ├─────────────────────────────────────────────────────────────┤
-│ [Call History] [Process Monitor] [Statistics] [Export CSV]  │
+│ [Process Monitor] [Call History] [Charts & Stats] [Terminal]│
+│ [Export CSV] [Export JSON] [Clear Logs]                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -142,12 +143,15 @@ Open your browser and navigate to:
 👉 **`http://localhost:5000`**
 
 ### What You Can Do in the Dashboard:
-1. **View Live System Status**: Live CPU load %, RAM usage in GB, and running process counts.
-2. **Execute System Calls on Demand**: Select any system call from the left menu (`open`, `read`, `write`, `fork`, `getpid`, etc.), customize parameters, and click **[ Execute System Call ]**.
-3. **Inspect Kernel Telemetry**: Observe exact Return Value, Status (`SUCCESS` / `ERROR`), and microsecond Execution Time.
-4. **Learn Operating System Internals**: Read the step-by-step transition diagram showing what happened inside User Space (Ring 3) and Kernel Space (Ring 0).
-5. **Monitor Live Processes**: Switch to **Process Monitor** to view real-time processes, PIDs, and memory allocations.
-6. **Track History & Export CSV**: Filter recorded system calls in real-time or click **[ Export CSV ]** to download the session log.
+1. **Live System Status & Sparklines**: Real-time CPU load %, RAM usage in GB, and running process counts via `psutil`.
+2. **Execute System Calls on Demand**: Select any system call from the left menu (`open`, `read`, `write`, `fork`, `getpid`, etc.), customize parameters, and click **[ Execute System Call ]** (or press **`Ctrl + Enter`**).
+3. **Interactive File Lifecycle**: Use the top bar action or `write()` to enter custom data. The system writes your exact text into the kernel and displays the retrieved data upon `read()`.
+4. **Kernel Telemetry**: Observe exact Return Value (`%rax`), Status (`SUCCESS` / `ERROR`), and microsecond Execution Time.
+5. **Operating System Transition Flow**: Step-by-step transition diagram showing CPU privilege elevation from User Space (Ring 3) to Kernel Space (Ring 0).
+6. **Live Process Monitor**: Inspect active Linux processes, PIDs, names, CPU %, and memory allocations auto-synced every 2.5s.
+7. **Chart.js Dynamic Analytics**: Interactive Doughnut chart for syscall frequency distribution and live dual-axis line graph for CPU & Memory load.
+8. **Embedded Linux Terminal**: Real-time console window streaming raw stdout and strace logs.
+9. **Export Ledger**: Download telemetry logs via **[ Export CSV ]** or **[ Export JSON ]**.
 
 ---
 
