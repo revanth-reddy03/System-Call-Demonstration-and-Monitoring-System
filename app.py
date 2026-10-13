@@ -44,7 +44,12 @@ session_state = {
         "mkdir": 12,
         "rmdir": 8
     },
-    "history": []
+    "history": [],
+    "metrics_history": {
+        "timestamps": [],
+        "cpu": [],
+        "memory": []
+    }
 }
 
 # Pre-populate history with initial realistic system logs
@@ -55,6 +60,14 @@ initial_logs = [
     {"time": "10:42:03", "process": "syscall_runner", "syscall": "close()", "params": "fd=3", "return_value": "0", "status": "SUCCESS", "duration": "0.12 ms"},
 ]
 session_state["history"].extend(initial_logs)
+
+# Seed initial 8 metrics points
+now_base = time.time()
+for i in range(8, 0, -1):
+    t_str = datetime.fromtimestamp(now_base - i * 3).strftime("%H:%M:%S")
+    session_state["metrics_history"]["timestamps"].append(t_str)
+    session_state["metrics_history"]["cpu"].append(round(12.0 + (i * 1.7) % 15, 1))
+    session_state["metrics_history"]["memory"].append(round(35.0 + (i * 0.8) % 10, 1))
 
 def get_wsl_path(win_path):
     clean_path = win_path.replace("\\", "/")
@@ -212,17 +225,32 @@ def get_system_status():
         procs_count = len(psutil.pids())
         used_mem_gb = round(mem.used / (1024 ** 3), 1)
         total_mem_gb = round(mem.total / (1024 ** 3), 1)
-        mem_display = f"{used_mem_gb} GB ({mem.percent}%)"
+        mem_pct = round(mem.percent, 1)
+        mem_display = f"{used_mem_gb} GB ({mem_pct}%)"
     else:
         cpu = 15.4
+        mem_pct = 38.0
         procs_count = 42
         mem_display = "4.2 GB (38%)"
+
+    now_str = datetime.now().strftime("%H:%M:%S")
+    history = session_state.setdefault("metrics_history", {"timestamps": [], "cpu": [], "memory": []})
+    history["timestamps"].append(now_str)
+    history["cpu"].append(float(cpu))
+    history["memory"].append(float(mem_pct))
+    if len(history["timestamps"]) > 20:
+        history["timestamps"].pop(0)
+        history["cpu"].pop(0)
+        history["memory"].pop(0)
 
     return jsonify({
         "processes": procs_count,
         "syscalls": session_state["total_syscalls"],
         "cpu": f"{cpu}%",
+        "cpu_val": float(cpu),
         "memory": mem_display,
+        "memory_val": float(mem_pct),
+        "metrics_history": history,
         "status": "ONLINE"
     })
 
@@ -402,6 +430,15 @@ def export_csv():
         csv_data,
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=syscall_activity_history.csv"}
+    )
+
+@app.route("/api/export_json", methods=["GET"])
+def export_json():
+    json_data = json.dumps(session_state["history"], indent=2)
+    return Response(
+        json_data,
+        mimetype="application/json",
+        headers={"Content-Disposition": "attachment;filename=syscall_activity_history.json"}
     )
 
 @app.route("/api/run/<action>", methods=["POST"])

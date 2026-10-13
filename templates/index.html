@@ -3,52 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Call Monitoring & Execution Dashboard</title>
-    <!-- Chart.js CDN -->
+    <title>KernelSys // System Call Monitoring & Execution Dashboard</title>
+    
+    <!-- Modern Typography: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js for High-Performance Real-Time Visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 
 <div class="dashboard-wrapper">
 
-    <!-- Top Header -->
+    <!-- Top Navigation Header -->
     <header class="main-header">
-        <div class="header-content">
-            <div>
-                <h1 class="main-title">SYSTEM CALL MONITORING & EXECUTION DASHBOARD</h1>
-                <p class="sub-title">Operating Systems and Systems Programming (25CS2104E) • Team 18 • Dr. K. Hema</p>
+        <div class="header-left">
+            <div class="brand-logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="4" width="16" height="16" rx="2"/>
+                    <rect x="9" y="9" width="6" height="6"/>
+                    <line x1="9" y1="1" x2="9" y2="4"/>
+                    <line x1="15" y1="1" x2="15" y2="4"/>
+                    <line x1="9" y1="20" x2="9" y2="23"/>
+                    <line x1="15" y1="20" x2="15" y2="23"/>
+                    <line x1="20" y1="9" x2="23" y2="9"/>
+                    <line x1="20" y1="14" x2="23" y2="14"/>
+                    <line x1="1" y1="9" x2="4" y2="9"/>
+                    <line x1="1" y1="14" x2="4" y2="14"/>
+                </svg>
             </div>
+            <div>
+                <div class="brand-title-row">
+                    <h1 class="main-title">SYSTEM CALL MONITORING &amp; EXECUTION DASHBOARD</h1>
+                    <span class="badge-version">v2.4 LTS</span>
+                </div>
+                <p class="sub-title">Operating Systems &amp; Systems Programming (25CS2104E) • Team 18 • Dr. K. Hema</p>
+            </div>
+        </div>
+
+        <div class="header-right">
             <div class="status-indicator">
                 <span class="pulse-indicator"></span>
-                <span id="liveStatusText">System Status: ONLINE</span>
+                <span id="liveStatusText">KERNEL TRAP: ACTIVE</span>
+            </div>
+            
+            <div class="header-actions">
+                <button class="btn btn-header" onclick="triggerWorkflow('file')" title="Run full file workflow with custom data">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span>File Lifecycle</span>
+                </button>
+                <button class="btn btn-header" onclick="triggerWorkflow('process')" title="Run fork, execvp, waitpid process workflow">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>Process Lifecycle</span>
+                </button>
+                <button class="btn btn-header btn-header-accent" onclick="triggerWorkflow('test')" title="Run 12/12 Automated Test Assertions">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <span>Run 12 Tests</span>
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- System Status Metric Cards -->
+    <!-- Top System Status Metrics Cards -->
     <section class="status-section">
-        <h2 class="section-label">System Status</h2>
+        <div class="section-header-row">
+            <h2 class="section-label">SYSTEM STATUS</h2>
+            <span class="refresh-chip" onclick="loadSystemStatus()" title="Click to refresh">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Auto-sync (2.5s)
+            </span>
+        </div>
+
         <div class="metric-grid">
+            <!-- Metric 1: Processes -->
             <div class="metric-card">
-                <div class="metric-label">Processes</div>
-                <div class="metric-value" id="statProcesses">--</div>
-                <div class="metric-sub">Active Running Tasks</div>
+                <div class="metric-top">
+                    <span class="metric-label">Processes</span>
+                    <span class="metric-icon cyan">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </span>
+                </div>
+                <div class="metric-value font-mono" id="statProcesses">--</div>
+                <div class="metric-footer">
+                    <span class="metric-sub">Active Running Tasks</span>
+                    <span class="metric-pill">task_struct</span>
+                </div>
             </div>
+
+            <!-- Metric 2: Syscalls -->
             <div class="metric-card">
-                <div class="metric-label">Syscalls</div>
-                <div class="metric-value highlight-cyan" id="statSyscalls">--</div>
-                <div class="metric-sub">Kernel Traps Handled</div>
+                <div class="metric-top">
+                    <span class="metric-label">Syscalls</span>
+                    <span class="metric-icon emerald">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </span>
+                </div>
+                <div class="metric-value font-mono highlight-cyan" id="statSyscalls">--</div>
+                <div class="metric-footer">
+                    <span class="metric-sub">Kernel Traps Executed</span>
+                    <span class="metric-pill">Ring 0 Handler</span>
+                </div>
             </div>
+
+            <!-- Metric 3: CPU Load -->
             <div class="metric-card">
-                <div class="metric-label">CPU</div>
-                <div class="metric-value highlight-yellow" id="statCPU">--</div>
-                <div class="metric-sub">Processor Load</div>
+                <div class="metric-top">
+                    <span class="metric-label">CPU</span>
+                    <span class="metric-icon yellow">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                    </span>
+                </div>
+                <div class="metric-value font-mono highlight-yellow" id="statCPU">--</div>
+                <div class="metric-footer">
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar-fill cpu" id="cpuProgressBar" style="width: 25%;"></div>
+                    </div>
+                    <span class="metric-sub" id="cpuStatusTag">Normal</span>
+                </div>
             </div>
+
+            <!-- Metric 4: Memory -->
             <div class="metric-card">
-                <div class="metric-label">Memory</div>
-                <div class="metric-value highlight-purple" id="statMemory">--</div>
-                <div class="metric-sub">RAM Allocation</div>
+                <div class="metric-top">
+                    <span class="metric-label">Memory</span>
+                    <span class="metric-icon purple">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                    </span>
+                </div>
+                <div class="metric-value font-mono highlight-purple" id="statMemory">--</div>
+                <div class="metric-footer">
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar-fill memory" id="memProgressBar" style="width: 38%;"></div>
+                    </div>
+                    <span class="metric-sub">RAM Allocation</span>
+                </div>
             </div>
         </div>
     </section>
@@ -58,132 +150,255 @@
 
         <!-- Left Column: System Call Selector List -->
         <div class="panel syscall-selector-panel">
-            <h3 class="panel-title">SYSTEM CALLS</h3>
-            
-            <div class="syscall-group">
-                <span class="group-heading">Process Operations</span>
-                <div class="syscall-item active" onclick="selectSyscall('fork', this)">
-                    <span class="radio-dot"></span>
-                    <span class="call-name">fork()</span>
-                    <span class="call-desc">Process Creation (COW)</span>
+            <div class="panel-header">
+                <div class="panel-title-wrap">
+                    <h3 class="panel-title">SYSTEM CALL</h3>
+                    <span class="count-badge" id="syscallCountBadge">10 Available</span>
                 </div>
-                <div class="syscall-item" onclick="selectSyscall('exec', this)">
-                    <span class="radio-dot"></span>
-                    <span class="call-name">exec()</span>
-                    <span class="call-desc">Image Replacement</span>
-                </div>
-                <div class="syscall-item" onclick="selectSyscall('wait', this)">
-                    <span class="radio-dot"></span>
-                    <span class="call-name">wait()</span>
-                    <span class="call-desc">Process Sync & Reaping</span>
-                </div>
-                <div class="syscall-item" onclick="selectSyscall('getpid', this)">
-                    <span class="radio-dot"></span>
-                    <span class="call-name">getpid()</span>
-                    <span class="call-desc">Fetch Current Process ID</span>
-                </div>
-                <div class="syscall-item" onclick="selectSyscall('getppid', this)">
-                    <span class="radio-dot"></span>
-                    <span class="call-name">getppid()</span>
-                    <span class="call-desc">Fetch Parent Process ID</span>
+                <div class="search-box">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="filterSyscallsInput" placeholder="Filter calls (fork, open)..." onkeyup="filterSyscallList()">
                 </div>
             </div>
 
-            <div class="syscall-group">
-                <span class="group-heading">File Operations</span>
-                <div class="syscall-item" onclick="selectSyscall('open', this)">
-                    <span class="radio-dot"></span>
-                    <span class="call-name">open()</span>
-                    <span class="call-desc">Create / Open Descriptor</span>
-                </div>
-                <div class="syscall-item" onclick="selectSyscall('read', this)">
-                    <span class="radio-dot"></span>
-                    <span class="call-name">read()</span>
-                    <span class="call-desc">Buffer Read from VFS</span>
-                </div>
-                <div class="syscall-item" onclick="selectSyscall('write', this)">
-                    <span class="radio-dot"></span>
-                    <span class="call-name">write()</span>
-                    <span class="call-desc">Transfer Buffer to Disk</span>
-                </div>
-                <div class="syscall-item" onclick="selectSyscall('close', this)">
-                    <span class="radio-dot"></span>
-                    <span class="call-name">close()</span>
-                    <span class="call-desc">Release File Descriptor</span>
-                </div>
+            <!-- Category Pills Filter -->
+            <div class="category-tabs">
+                <button class="cat-pill active" onclick="filterCategory('all', this)">All</button>
+                <button class="cat-pill" onclick="filterCategory('process', this)">Process</button>
+                <button class="cat-pill" onclick="filterCategory('file', this)">File</button>
+                <button class="cat-pill" onclick="filterCategory('directory', this)">Directory</button>
             </div>
 
-            <div class="syscall-group">
-                <span class="group-heading">Directory Operations</span>
-                <div class="syscall-item" onclick="selectSyscall('mkdir', this)">
-                    <span class="radio-dot"></span>
-                    <span class="call-name">mkdir()</span>
-                    <span class="call-desc">Create Directory Inode</span>
+            <!-- Syscall List Container -->
+            <div class="syscall-list-container" id="syscallListContainer">
+                
+                <!-- Process Group -->
+                <div class="syscall-item" data-category="process" onclick="selectSyscall('fork', this)">
+                    <div class="item-left">
+                        <span class="radio-indicator"></span>
+                        <div>
+                            <span class="call-name font-mono">fork()</span>
+                            <span class="call-desc">Process creation via Copy-On-Write (COW)</span>
+                        </div>
+                    </div>
+                    <span class="type-tag process">Process</span>
                 </div>
-                <div class="syscall-item" onclick="selectSyscall('rmdir', this)">
-                    <span class="radio-dot"></span>
-                    <span class="call-name">rmdir()</span>
-                    <span class="call-desc">Remove Directory Inode</span>
+
+                <div class="syscall-item" data-category="process" onclick="selectSyscall('exec', this)">
+                    <div class="item-left">
+                        <span class="radio-indicator"></span>
+                        <div>
+                            <span class="call-name font-mono">exec()</span>
+                            <span class="call-desc">Replace virtual address space image</span>
+                        </div>
+                    </div>
+                    <span class="type-tag process">Process</span>
                 </div>
+
+                <div class="syscall-item active" data-category="file" onclick="selectSyscall('open', this)">
+                    <div class="item-left">
+                        <span class="radio-indicator"></span>
+                        <div>
+                            <span class="call-name font-mono">open()</span>
+                            <span class="call-desc">Allocate index in File Descriptor Table</span>
+                        </div>
+                    </div>
+                    <span class="type-tag file">File</span>
+                </div>
+
+                <div class="syscall-item" data-category="file" onclick="selectSyscall('read', this)">
+                    <div class="item-left">
+                        <span class="radio-indicator"></span>
+                        <div>
+                            <span class="call-name font-mono">read()</span>
+                            <span class="call-desc">Copy bytes from kernel page cache to buffer</span>
+                        </div>
+                    </div>
+                    <span class="type-tag file">File</span>
+                </div>
+
+                <div class="syscall-item" data-category="file" onclick="selectSyscall('write', this)">
+                    <div class="item-left">
+                        <span class="radio-indicator"></span>
+                        <div>
+                            <span class="call-name font-mono">write()</span>
+                            <span class="call-desc">Transfer user buffer to kernel page cache</span>
+                        </div>
+                    </div>
+                    <span class="type-tag file">File</span>
+                </div>
+
+                <div class="syscall-item" data-category="file" onclick="selectSyscall('close', this)">
+                    <div class="item-left">
+                        <span class="radio-indicator"></span>
+                        <div>
+                            <span class="call-name font-mono">close()</span>
+                            <span class="call-desc">Release descriptor &amp; decrement refcount</span>
+                        </div>
+                    </div>
+                    <span class="type-tag file">File</span>
+                </div>
+
+                <div class="syscall-item" data-category="process" onclick="selectSyscall('wait', this)">
+                    <div class="item-left">
+                        <span class="radio-indicator"></span>
+                        <div>
+                            <span class="call-name font-mono">wait()</span>
+                            <span class="call-desc">Synchronize process termination &amp; reap PCB</span>
+                        </div>
+                    </div>
+                    <span class="type-tag process">Process</span>
+                </div>
+
+                <div class="syscall-item" data-category="process" onclick="selectSyscall('getpid', this)">
+                    <div class="item-left">
+                        <span class="radio-indicator"></span>
+                        <div>
+                            <span class="call-name font-mono">getpid()</span>
+                            <span class="call-desc">Fetch PID field from active task_struct</span>
+                        </div>
+                    </div>
+                    <span class="type-tag process">Process</span>
+                </div>
+
+                <div class="syscall-item" data-category="process" onclick="selectSyscall('getppid', this)">
+                    <div class="item-left">
+                        <span class="radio-indicator"></span>
+                        <div>
+                            <span class="call-name font-mono">getppid()</span>
+                            <span class="call-desc">Fetch Parent PID via task_struct hierarchy</span>
+                        </div>
+                    </div>
+                    <span class="type-tag process">Process</span>
+                </div>
+
+                <div class="syscall-item" data-category="directory" onclick="selectSyscall('mkdir', this)">
+                    <div class="item-left">
+                        <span class="radio-indicator"></span>
+                        <div>
+                            <span class="call-name font-mono">mkdir()</span>
+                            <span class="call-desc">Create directory inode in Virtual File System</span>
+                        </div>
+                    </div>
+                    <span class="type-tag dir">Directory</span>
+                </div>
+
+                <div class="syscall-item" data-category="directory" onclick="selectSyscall('rmdir', this)">
+                    <div class="item-left">
+                        <span class="radio-indicator"></span>
+                        <div>
+                            <span class="call-name font-mono">rmdir()</span>
+                            <span class="call-desc">Unlink empty directory inode from VFS</span>
+                        </div>
+                    </div>
+                    <span class="type-tag dir">Directory</span>
+                </div>
+
             </div>
         </div>
 
         <!-- Right Column: System Call Details & Execution Panel -->
         <div class="panel syscall-details-panel">
-            <div class="details-header">
-                <h3 class="panel-title">SYSTEM CALL DETAILS</h3>
-                <span class="active-call-badge" id="activeCallBadge">Call: fork()</span>
+            <div class="panel-header">
+                <div>
+                    <h3 class="panel-title">SYSTEM CALL DETAILS</h3>
+                    <div class="call-signature font-mono" id="activeCallSignature">int open(const char *pathname, int flags, mode_t mode);</div>
+                </div>
+                <div class="active-badge-wrap">
+                    <span class="active-call-badge font-mono" id="activeCallBadge">Call: open()</span>
+                </div>
             </div>
 
             <!-- Dynamic Parameter Input Box -->
             <div class="param-box" id="paramContainer">
-                <!-- Dynamically injected inputs based on selected call -->
+                <!-- Dynamically injected parameters form -->
             </div>
 
-            <!-- Action Button -->
-            <div style="margin: 16px 0;">
+            <!-- Execution Action Trigger Button -->
+            <div class="action-btn-row">
                 <button class="btn btn-execute" id="btnExecuteCall" onclick="executeSelectedSyscall()">
-                    <span>▶ [ Execute System Call ]</span>
+                    <span class="btn-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    </span>
+                    <span class="btn-text">[ Execute System Call ]</span>
+                    <span class="kbd-hint">Ctrl + Enter</span>
                 </button>
             </div>
 
-            <!-- Execution Result Telemetry -->
+            <!-- Execution Result Telemetry (matching layout) -->
             <div class="telemetry-grid">
                 <div class="telemetry-card">
-                    <div class="telemetry-label">Return Value</div>
-                    <div class="telemetry-value" id="resReturnValue">--</div>
+                    <div class="telemetry-label-row">
+                        <span class="telemetry-label">Return Value</span>
+                        <span class="reg-tag font-mono">%rax</span>
+                    </div>
+                    <div class="telemetry-value font-mono highlight-cyan" id="resReturnValue">3</div>
                 </div>
+
                 <div class="telemetry-card">
-                    <div class="telemetry-label">Status</div>
-                    <div class="telemetry-value" id="resStatus">--</div>
+                    <div class="telemetry-label-row">
+                        <span class="telemetry-label">Status</span>
+                        <span class="reg-tag font-mono">errno</span>
+                    </div>
+                    <div class="telemetry-value status-badge-success font-mono" id="resStatus">SUCCESS</div>
                 </div>
+
                 <div class="telemetry-card">
-                    <div class="telemetry-label">Execution Time</div>
-                    <div class="telemetry-value" id="resTime">--</div>
+                    <div class="telemetry-label-row">
+                        <span class="telemetry-label">Execution Time</span>
+                        <span class="reg-tag font-mono">CLOCK_MONOTONIC</span>
+                    </div>
+                    <div class="telemetry-value font-mono highlight-yellow" id="resTime">0.42 ms</div>
                 </div>
             </div>
 
-            <!-- What Happens Inside OS Diagram -->
+            <!-- What Happens Inside the OS Transition Architecture -->
             <div class="os-transition-card">
-                <h4 class="transition-title">What Happens Inside the OS</h4>
+                <div class="transition-header">
+                    <h4 class="transition-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        What Happens Inside the OS
+                    </h4>
+                    <span class="layer-pill">Hardware Ring Boundary</span>
+                </div>
+
+                <!-- 4-Stage Architectural Flow -->
                 <div class="boundary-flow">
                     <div class="boundary-node user">
-                        <span class="node-layer">User Space (Ring 3)</span>
-                        <span class="node-action" id="stepUser">Application issues call</span>
+                        <div class="node-tag">Ring 3</div>
+                        <span class="node-layer">User Space</span>
+                        <span class="node-action font-mono" id="stepUser">open("test.txt", O_RDONLY)</span>
                     </div>
-                    <div class="boundary-arrow">➔ syscall trap ➔</div>
+
+                    <div class="boundary-arrow">
+                        <span class="arrow-label">syscall trap</span>
+                        <div class="arrow-line"></div>
+                    </div>
+
                     <div class="boundary-node kernel">
-                        <span class="node-layer">Kernel Space (Ring 0)</span>
-                        <span class="node-action" id="stepKernel">VFS / Scheduler dispatch</span>
+                        <div class="node-tag">Ring 0</div>
+                        <span class="node-layer">Kernel Space</span>
+                        <span class="node-action font-mono" id="stepKernel">VFS directory lookup &amp; allocate fd</span>
                     </div>
-                    <div class="boundary-arrow">➔ %rax ➔</div>
+
+                    <div class="boundary-arrow">
+                        <span class="arrow-label">%rax return</span>
+                        <div class="arrow-line"></div>
+                    </div>
+
                     <div class="boundary-node return">
-                        <span class="node-layer">User Result</span>
-                        <span class="node-action" id="stepResult">Returns to Application</span>
+                        <div class="node-tag">Result</div>
+                        <span class="node-layer">User Stack</span>
+                        <span class="node-action font-mono" id="stepResult">Returns File Descriptor (fd = 3)</span>
                     </div>
                 </div>
+
+                <!-- Step-by-Step Kernel Internals Breakdown -->
                 <div class="os-steps-list" id="osStepsList">
-                    <div class="os-step-item">Select a system call above and click Execute to observe the kernel transition.</div>
+                    <div class="os-step-item">User space invokes open() passing pathname and permission flags.</div>
+                    <div class="os-step-item">CPU issues hardware trap instruction, elevating privilege to Kernel Mode (Ring 0).</div>
+                    <div class="os-step-item">VFS parses directory dentry structure and allocates the lowest free index in Process File Table.</div>
+                    <div class="os-step-item">Kernel returns positive integer file descriptor (fd) in register %rax.</div>
                 </div>
             </div>
         </div>
@@ -193,19 +408,54 @@
     <!-- Bottom Section: System Call Activity / Monitor -->
     <section class="panel activity-panel">
         <div class="activity-header">
-            <h3 class="panel-title">SYSTEM CALL ACTIVITY / MONITOR</h3>
-            <div class="activity-search">
-                <input type="text" id="logSearchInput" placeholder="Filter calls (e.g. open, SUCCESS)..." onkeyup="filterActivityTable()">
+            <div class="activity-title-group">
+                <h3 class="panel-title">SYSTEM CALL ACTIVITY / MONITOR</h3>
+                <span class="activity-subtitle">Real-time kernel trap ledger &amp; process inspector</span>
+            </div>
+
+            <div class="activity-controls">
+                <div class="search-box">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="logSearchInput" placeholder="Filter activity (open, SUCCESS)..." onkeyup="filterActivityTable()">
+                </div>
             </div>
         </div>
 
-        <!-- Tab Bar -->
+        <!-- Tab Bar (Matching user specification layout) -->
         <div class="tab-bar">
-            <button class="tab-btn" id="tabBtnProcess" onclick="switchTab('process')">🖥️ Process Monitor</button>
-            <button class="tab-btn active" id="tabBtnHistory" onclick="switchTab('history')">📋 Call History</button>
-            <button class="tab-btn" id="tabBtnStats" onclick="switchTab('stats')">📊 Statistics</button>
-            <button class="tab-btn-danger" onclick="clearHistoryLogs()">🗑️ Clear Logs</button>
-            <button class="tab-btn-secondary" onclick="exportCSV()">📥 Export CSV</button>
+            <div class="tab-group-left">
+                <button class="tab-btn" id="tabBtnProcess" onclick="switchTab('process')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    <span>Process Monitor</span>
+                </button>
+                <button class="tab-btn active" id="tabBtnHistory" onclick="switchTab('history')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span>Call History</span>
+                </button>
+                <button class="tab-btn" id="tabBtnStats" onclick="switchTab('stats')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                    <span>Statistics &amp; Charts</span>
+                </button>
+                <button class="tab-btn" id="tabBtnTerminal" onclick="switchTab('terminal')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                    <span>Kernel Terminal</span>
+                </button>
+            </div>
+
+            <div class="tab-group-right">
+                <button class="tab-btn-danger" onclick="clearHistoryLogs()" title="Purge stored telemetry logs">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <span>Clear Logs</span>
+                </button>
+                <button class="tab-btn-secondary" onclick="exportCSV()" title="Export CSV log ledger">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Export CSV</span>
+                </button>
+                <button class="tab-btn-secondary" onclick="exportJSON()" title="Export structured JSON dataset">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    <span>Export JSON</span>
+                </button>
+            </div>
         </div>
 
         <!-- View 1: Call History Table -->
@@ -214,17 +464,17 @@
                 <table class="data-table" id="activityTable">
                     <thead>
                         <tr>
-                            <th>Time</th>
-                            <th>Process</th>
-                            <th>System Call</th>
+                            <th style="width: 110px;">Time</th>
+                            <th style="width: 140px;">Process</th>
+                            <th style="width: 130px;">System Call</th>
                             <th>Parameters</th>
-                            <th>Return Value</th>
-                            <th>Status</th>
-                            <th>Duration</th>
+                            <th style="width: 110px;">Return Value</th>
+                            <th style="width: 100px;">Status</th>
+                            <th style="width: 110px;">Duration</th>
                         </tr>
                     </thead>
                     <tbody id="historyTableBody">
-                        <!-- Injected dynamically -->
+                        <!-- Populated dynamically via JS -->
                     </tbody>
                 </table>
             </div>
@@ -236,24 +486,51 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>PID</th>
-                            <th>Process Name</th>
-                            <th>CPU Usage</th>
-                            <th>Memory Usage</th>
+                            <th style="width: 90px;">PID</th>
+                            <th>Process Image</th>
+                            <th style="width: 140px;">CPU Load</th>
+                            <th style="width: 160px;">Resident Memory</th>
+                            <th style="width: 120px;">State</th>
                         </tr>
                     </thead>
                     <tbody id="processTableBody">
-                        <!-- Injected dynamically -->
+                        <!-- Populated dynamically via JS -->
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- View 3: Statistics Frequency Bars -->
+        <!-- View 3: Statistics & Interactive Charts -->
         <div id="viewStats" class="tab-view">
-            <div class="stats-overview">
-                <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">
-                    Total System Calls Logged: <strong style="color: var(--primary);" id="totalCallsSummary">1,284</strong>
+            <div class="charts-grid">
+                <!-- Chart 1: Syscall Frequency Doughnut -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h4>System Call Distribution</h4>
+                        <span class="chart-subtitle">Relative call counts</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="syscallPieChart" height="230"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: CPU & Memory Real-Time Stream -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h4>Live CPU &amp; Memory Stream</h4>
+                        <span class="chart-subtitle">Rolling telemetry history</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="resourceLineChart" height="230"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Frequency Progress Bars -->
+            <div class="stats-overview-bars">
+                <div class="bars-header">
+                    <h4>Execution Frequency Ledger</h4>
+                    <span class="font-mono text-muted">Total: <strong id="totalCallsSummary" class="highlight-cyan">1,284</strong> calls</span>
                 </div>
                 <div class="bars-container" id="statsBarsContainer">
                     <!-- Progress bars injected dynamically -->
@@ -261,9 +538,74 @@
             </div>
         </div>
 
+        <!-- View 4: Embedded Kernel Console / Terminal -->
+        <div id="viewTerminal" class="tab-view">
+            <div class="terminal-window">
+                <div class="terminal-topbar">
+                    <div class="terminal-dots">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                    </div>
+                    <div class="terminal-title font-mono">kernel_sys // /dev/pts/0 — bash</div>
+                    <div class="terminal-actions">
+                        <button class="term-btn" onclick="copyTerminalOutput()" title="Copy Terminal Output">Copy</button>
+                        <button class="term-btn" onclick="clearTerminalOutput()" title="Clear Terminal Window">Clear</button>
+                    </div>
+                </div>
+                <pre class="terminal-output font-mono" id="terminalOutput">
+[SYS_BOOT] System Call Monitoring &amp; Execution Environment Initialized.
+[SYS_BOOT] POSIX Standard Compliant (Linux x86-64 Architecture).
+[SYS_BOOT] Kernel privilege traps mapped to Ring 0.
+Ready for system call execution...
+                </pre>
+            </div>
+        </div>
+
     </section>
 
 </div>
+
+<!-- Modal for Interactive Custom File Workflow Input -->
+<div class="modal-backdrop" id="fileWorkflowModal" style="display: none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title-row">
+                <div class="modal-icon cyan">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div>
+                    <h3 class="modal-title">Interactive File Operations Lifecycle</h3>
+                    <p class="modal-desc">Executes open() &rarr; write() &rarr; close() &rarr; open() &rarr; read() &rarr; close()</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeFileWorkflowModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="param-row">
+                <label>Target File Name</label>
+                <input type="text" class="param-input" id="modalFileName" value="syscall_testfile.txt">
+            </div>
+
+            <div class="param-row">
+                <label style="color: var(--primary); font-weight: 600;">Data to Enter into the File (Required)</label>
+                <textarea class="param-textarea" id="modalFileContent" rows="3" placeholder="Type your custom data here to write into the file..."></textarea>
+                <div class="param-hint">* You must provide custom data. The system call pipeline will store this into the file descriptor and verify it via read().</div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeFileWorkflowModal()">Cancel</button>
+            <button class="btn btn-execute-modal" onclick="executeFileWorkflow()">
+                <span>▶ Run File Pipeline</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
 
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>

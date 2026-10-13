@@ -28,10 +28,10 @@ The following deliberate fault conditions were injected and verified via return 
 
 | PID | Syscall | Return Code | Detected `errno` | Inspected Call Arguments |
 | :--- | :--- | :--- | :--- | :--- |
-| `526` | `openat` | `-1` | `ENOENT` | `AT_FDCWD, "non_existent_file_99999.xyz", O_RDONLY` |
-| `526` | `read` | `-1` | `EBADF` | `888, 0x7fff04a90440, 64` |
-| `526` | `close` | `-1` | `EBADF` | `888` |
-| `528` | `execve` | `-1` | `ENOENT` | `"/usr/bin/this_program_does_not_exist_xyz", ["/usr/bin/this_program_does_not_exist_xyz"], 0x7fff04a90670 /* 25 vars */` |
+| `506` | `openat` | `-1` | `ENOENT` | `AT_FDCWD, "non_existent_file_99999.xyz", O_RDONLY` |
+| `506` | `read` | `-1` | `EBADF` | `888, 0x7ffedf9522a0, 64` |
+| `506` | `close` | `-1` | `EBADF` | `888` |
+| `508` | `execve` | `-1` | `ENOENT` | `"/usr/bin/this_program_does_not_exist_xyz", ["/usr/bin/this_program_does_not_exist_xyz"], 0x7ffedf9524d0 /* 25 vars */` |
 
 ## 4. Kernel Boundary Interaction Highlights
 
